@@ -1,0 +1,201 @@
+faculty,title,journal,status
+Dr. Pooja Verma,NLP for Chatbots,IEEE Transactions,rejected
+Dr. Rohit Sharma,Object Detection using YOLO,IEEE Transactions,rejected
+Dr. Arun Kumar,Human Computer Interaction Trends,Elsevier Journal,accepted
+Dr. Kavya Nair,Edge Computing in IoT,IEEE Access,published
+Dr. Divya Rani,Multi-cloud Architecture,ACM Transactions,rejected
+Dr. Ravi Teja,NLP for Chatbots,IEEE Transactions,accepted
+Dr. Lakshmi Priya,Multi-cloud Architecture,IEEE Access,published
+Dr. Sanjay Patel,Cryptocurrency Trends Analysis,Springer Journal,published
+Dr. Rajesh Singh,Wireless Sensor Networks Optimization,Springer Journal,published
+Dr. Pooja Verma,Edge Computing in IoT,Elsevier Journal,published
+Dr. Arun Kumar,Cloud Computing Security,IEEE Transactions,published
+Dr. Kavya Nair,Wireless Sensor Networks Optimization,Elsevier Journal,rejected
+Dr. Sita Devi,Object Detection using YOLO,ACM Transactions,published
+Dr. Lakshmi Priya,Computer Vision in Autonomous Vehicles,Springer Journal,rejected
+Dr. Anjali Sharma,Edge Computing in IoT,Elsevier Journal,rejected
+Dr. Kavya Nair,Sentiment Analysis using BERT,Elsevier Journal,published
+Dr. Sanjay Patel,Deep Learning for Medical Imaging,Springer Journal,published
+Dr. Anjali Sharma,Big Data Analytics in Healthcare,Elsevier Journal,rejected
+Dr. Naveen Kumar,Wireless Sensor Networks Optimization,IEEE Access,published
+Dr. Meena Gupta,Agile vs Waterfall Study,IEEE Access,rejected
+Dr. Naveen Kumar,Reinforcement Learning Applications,IEEE Transactions,accepted
+Dr. Rajesh Singh,UX Design Principles,ACM Transactions,accepted
+Dr. Kavya Nair,Computer Vision in Autonomous Vehicles,IEEE Transactions,rejected
+Dr. Ravi Teja,Energy Efficient Routing Protocols,IEEE Access,rejected
+Dr. Naveen Kumar,UX Design Principles,Springer Journal,accepted
+Dr. Pooja Verma,Bioinformatics using AI,Springer Journal,published
+Dr. Anjali Sharma,Ethical Hacking Techniques,Springer Journal,accepted
+Dr. Sanjay Patel,Cryptocurrency Trends Analysis,IEEE Transactions,published
+Dr. Rajesh Singh,AI in Cancer Detection,Elsevier Journal,published
+Dr. Kiran Reddy,Energy Efficient Routing Protocols,ACM Transactions,accepted
+Dr. Ramesh Kumar,Object Detection using YOLO,IEEE Transactions,rejected
+Dr. Arun Kumar,Cloud Computing Security,Springer Journal,accepted
+Dr. Pooja Verma,Energy Efficient Routing Protocols,ACM Transactions,rejected
+Dr. Anjali Sharma,Clustering Algorithms Comparison,Springer Journal,accepted
+Dr. Kiran Reddy,UX Design Principles,Elsevier Journal,accepted
+Dr. Rohit Sharma,NLP for Chatbots,Springer Journal,rejected
+Dr. Meena Gupta,Precision Farming using AI,Elsevier Journal,accepted
+Dr. Ramesh Kumar,NLP for Chatbots,ACM Transactions,rejected
+Dr. Pooja Verma,Gene Prediction Models,IEEE Access,published
+Dr. Naveen Kumar,Deep Learning for Medical Imaging,IEEE Access,rejected
+Dr. Sanjay Patel,Clustering Algorithms Comparison,ACM Transactions,accepted
+Dr. Meena Gupta,Ethical Hacking Techniques,Elsevier Journal,rejected
+Dr. Rohit Sharma,Agile vs Waterfall Study,Elsevier Journal,accepted
+Dr. Kiran Reddy,Deep Learning for Medical Imaging,Elsevier Journal,accepted
+Dr. Kavya Nair,Gene Prediction Models,ACM Transactions,published
+Dr. Lakshmi Priya,Ethical Hacking Techniques,IEEE Access,rejected
+Dr. Sita Devi,AI in Cancer Detection,IEEE Access,accepted
+Dr. Lakshmi Priya,Ethical Hacking Techniques,IEEE Transactions,accepted
+Dr. Ramesh Kumar,Software Engineering Best Practices,IEEE Access,rejected
+Dr. Anjali Sharma,UX Design Principles,Elsevier Journal,published
+Dr. Ramesh Kumar,Fog Computing Architecture,IEEE Transactions,rejected
+Dr. Sita Devi,Gene Prediction Models,IEEE Access,rejected
+Dr. Meena Gupta,Precision Farming using AI,IEEE Transactions,rejected
+Dr. Pooja Verma,Deep Learning for Medical Imaging,Elsevier Journal,published
+Dr. Ramesh Kumar,Edge Computing in IoT,IEEE Access,accepted
+Dr. Kavya Nair,Fog Computing Architecture,ACM Transactions,accepted
+Dr. Kavya Nair,Cloud Computing Security,Elsevier Journal,rejected
+Dr. Rajesh Singh,Ethical Hacking Techniques,Elsevier Journal,published
+Dr. Sita Devi,NLP for Chatbots,IEEE Transactions,accepted
+Dr. Naveen Kumar,Software Engineering Best Practices,Elsevier Journal,rejected
+Dr. Kiran Reddy,Wireless Sensor Networks Optimization,IEEE Transactions,rejected
+Dr. Lakshmi Priya,Software Engineering Best Practices,IEEE Transactions,published
+Dr. Meena Gupta,Edge Computing in IoT,Springer Journal,accepted
+Dr. Pooja Verma,Agile vs Waterfall Study,IEEE Access,rejected
+Dr. Ravi Teja,Object Detection using YOLO,Springer Journal,published
+Dr. Meena Gupta,Gene Prediction Models,Elsevier Journal,published
+Dr. Sanjay Patel,Cryptocurrency Trends Analysis,IEEE Transactions,published
+Dr. Lakshmi Priya,AI in Cancer Detection,ACM Transactions,published
+Dr. Lakshmi Priya,Precision Farming using AI,Elsevier Journal,accepted
+Dr. Ramesh Kumar,IoT based Smart Agriculture,ACM Transactions,accepted
+Dr. Ramesh Kumar,Software Engineering Best Practices,IEEE Access,accepted
+Dr. Sanjay Patel,Edge Computing in IoT,ACM Transactions,rejected
+Dr. Sita Devi,Big Data Analytics in Healthcare,Springer Journal,accepted
+Dr. Kiran Reddy,Software Engineering Best Practices,Springer Journal,rejected
+Dr. Divya Rani,Precision Farming using AI,ACM Transactions,published
+Dr. Rohit Sharma,Data Mining Techniques,Springer Journal,accepted
+Dr. Arun Kumar,UX Design Principles,Springer Journal,rejected
+Dr. Kiran Reddy,Software Engineering Best Practices,ACM Transactions,rejected
+Dr. Sita Devi,Sentiment Analysis using BERT,Elsevier Journal,accepted
+Dr. Ramesh Kumar,Big Data Analytics in Healthcare,Elsevier Journal,accepted
+Dr. Meena Gupta,Deep Learning for Medical Imaging,IEEE Transactions,accepted
+Dr. Kavya Nair,Edge Computing in IoT,IEEE Access,published
+Dr. Kiran Reddy,Edge Computing in IoT,Elsevier Journal,accepted
+Dr. Lakshmi Priya,Agile vs Waterfall Study,IEEE Access,rejected
+Dr. Arun Kumar,Hadoop vs Spark Performance,IEEE Transactions,rejected
+Dr. Sanjay Patel,Bioinformatics using AI,Springer Journal,published
+Dr. Ravi Teja,Cryptocurrency Trends Analysis,IEEE Transactions,rejected
+Dr. Kiran Reddy,Agile vs Waterfall Study,IEEE Access,rejected
+Dr. Arun Kumar,Q-Learning Optimization,Springer Journal,rejected
+Dr. Arun Kumar,NLP for Chatbots,IEEE Transactions,published
+Dr. Sita Devi,Hadoop vs Spark Performance,IEEE Access,published
+Dr. Sanjay Patel,Wireless Sensor Networks Optimization,IEEE Transactions,rejected
+Dr. Kavya Nair,AI in Cancer Detection,IEEE Access,published
+Dr. Kiran Reddy,Software Engineering Best Practices,ACM Transactions,rejected
+Dr. Arun Kumar,Fog Computing Architecture,Springer Journal,accepted
+Dr. Kiran Reddy,Sentiment Analysis using BERT,Elsevier Journal,accepted
+Dr. Meena Gupta,Sentiment Analysis using BERT,ACM Transactions,published
+Dr. Lakshmi Priya,Agile vs Waterfall Study,Springer Journal,rejected
+Dr. Pooja Verma,Blockchain for Secure Transactions,Springer Journal,published
+Dr. Sanjay Patel,Cryptocurrency Trends Analysis,ACM Transactions,rejected
+Dr. Rajesh Singh,Computer Vision in Autonomous Vehicles,IEEE Transactions,accepted
+Dr. Sita Devi,Reinforcement Learning Applications,Elsevier Journal,published
+Dr. Ramesh Kumar,Human Computer Interaction Trends,Springer Journal,rejected
+Dr. Ravi Teja,Wireless Sensor Networks Optimization,Elsevier Journal,accepted
+Dr. Divya Rani,Human Computer Interaction Trends,Springer Journal,accepted
+Dr. Sita Devi,Precision Farming using AI,IEEE Transactions,rejected
+Dr. Divya Rani,Cryptocurrency Trends Analysis,IEEE Transactions,rejected
+Dr. Lakshmi Priya,UX Design Principles,IEEE Transactions,accepted
+Dr. Lakshmi Priya,Edge Computing in IoT,Springer Journal,rejected
+Dr. Anjali Sharma,Computer Vision in Autonomous Vehicles,Elsevier Journal,published
+Dr. Kiran Reddy,Cloud Computing Security,IEEE Access,accepted
+Dr. Kiran Reddy,Blockchain for Secure Transactions,IEEE Transactions,rejected
+Dr. Divya Rani,Sentiment Analysis using BERT,IEEE Transactions,rejected
+Dr. Divya Rani,UX Design Principles,Springer Journal,rejected
+Dr. Kiran Reddy,Cloud Computing Security,IEEE Access,accepted
+Dr. Ravi Teja,Deep Learning for Medical Imaging,Springer Journal,accepted
+Dr. Rohit Sharma,Deep Learning for Medical Imaging,IEEE Transactions,rejected
+Dr. Rajesh Singh,Ethical Hacking Techniques,Elsevier Journal,published
+Dr. Ramesh Kumar,Cryptocurrency Trends Analysis,Springer Journal,accepted
+Dr. Kiran Reddy,Computer Vision in Autonomous Vehicles,Elsevier Journal,published
+Dr. Anjali Sharma,Clustering Algorithms Comparison,ACM Transactions,accepted
+Dr. Pooja Verma,Data Mining Techniques,ACM Transactions,published
+Dr. Arun Kumar,Software Engineering Best Practices,ACM Transactions,published
+Dr. Sita Devi,Wireless Sensor Networks Optimization,ACM Transactions,accepted
+Dr. Sita Devi,Data Mining Techniques,ACM Transactions,accepted
+Dr. Ramesh Kumar,Blockchain for Secure Transactions,ACM Transactions,rejected
+Dr. Kiran Reddy,Blockchain for Secure Transactions,IEEE Transactions,published
+Dr. Naveen Kumar,Q-Learning Optimization,Elsevier Journal,accepted
+Dr. Naveen Kumar,Cybersecurity Threat Detection,Springer Journal,rejected
+Dr. Sanjay Patel,Computer Vision in Autonomous Vehicles,IEEE Transactions,published
+Dr. Anjali Sharma,Ethical Hacking Techniques,IEEE Transactions,rejected
+Dr. Pooja Verma,Cybersecurity Threat Detection,Springer Journal,accepted
+Dr. Ramesh Kumar,IoT based Smart Agriculture,Elsevier Journal,published
+Dr. Kavya Nair,Bioinformatics using AI,Springer Journal,rejected
+Dr. Ramesh Kumar,Software Engineering Best Practices,ACM Transactions,rejected
+Dr. Divya Rani,Human Computer Interaction Trends,Springer Journal,accepted
+Dr. Kavya Nair,Big Data Analytics in Healthcare,Springer Journal,rejected
+Dr. Sita Devi,Clustering Algorithms Comparison,Elsevier Journal,published
+Dr. Naveen Kumar,Agile vs Waterfall Study,IEEE Access,published
+Dr. Rohit Sharma,Cybersecurity Threat Detection,Springer Journal,rejected
+Dr. Arun Kumar,IoT based Smart Agriculture,IEEE Transactions,published
+Dr. Pooja Verma,Agile vs Waterfall Study,IEEE Transactions,accepted
+Dr. Meena Gupta,Wireless Sensor Networks Optimization,ACM Transactions,published
+Dr. Pooja Verma,Reinforcement Learning Applications,Elsevier Journal,published
+Dr. Ramesh Kumar,Bioinformatics using AI,Springer Journal,rejected
+Dr. Rohit Sharma,Energy Efficient Routing Protocols,ACM Transactions,published
+Dr. Kiran Reddy,Sentiment Analysis using BERT,Springer Journal,rejected
+Dr. Kavya Nair,Fog Computing Architecture,ACM Transactions,rejected
+Dr. Rohit Sharma,Multi-cloud Architecture,Springer Journal,published
+Dr. Divya Rani,IoT based Smart Agriculture,Springer Journal,accepted
+Dr. Sita Devi,Clustering Algorithms Comparison,ACM Transactions,accepted
+Dr. Ramesh Kumar,Agile vs Waterfall Study,IEEE Transactions,published
+Dr. Rajesh Singh,Edge Computing in IoT,Springer Journal,published
+Dr. Lakshmi Priya,Data Mining Techniques,Elsevier Journal,rejected
+Dr. Meena Gupta,Object Detection using YOLO,Springer Journal,rejected
+Dr. Kavya Nair,Multi-cloud Architecture,Elsevier Journal,published
+Dr. Pooja Verma,Human Computer Interaction Trends,Elsevier Journal,rejected
+Dr. Naveen Kumar,Multi-cloud Architecture,Springer Journal,rejected
+Dr. Rohit Sharma,UX Design Principles,IEEE Access,rejected
+Dr. Rajesh Singh,Q-Learning Optimization,IEEE Access,accepted
+Dr. Kiran Reddy,Edge Computing in IoT,Elsevier Journal,rejected
+Dr. Naveen Kumar,Clustering Algorithms Comparison,ACM Transactions,published
+Dr. Sita Devi,Bioinformatics using AI,IEEE Transactions,published
+Dr. Lakshmi Priya,AI in Cancer Detection,IEEE Transactions,rejected
+Dr. Ramesh Kumar,Fog Computing Architecture,IEEE Transactions,published
+Dr. Sanjay Patel,Agile vs Waterfall Study,ACM Transactions,published
+Dr. Sita Devi,Software Engineering Best Practices,Elsevier Journal,rejected
+Dr. Kavya Nair,Cybersecurity Threat Detection,Springer Journal,rejected
+Dr. Naveen Kumar,Deep Learning for Medical Imaging,Springer Journal,published
+Dr. Sanjay Patel,Computer Vision in Autonomous Vehicles,IEEE Access,rejected
+Dr. Pooja Verma,Computer Vision in Autonomous Vehicles,IEEE Transactions,accepted
+Dr. Ramesh Kumar,Object Detection using YOLO,Springer Journal,accepted
+Dr. Sanjay Patel,Multi-cloud Architecture,Elsevier Journal,published
+Dr. Pooja Verma,Wireless Sensor Networks Optimization,IEEE Access,accepted
+Dr. Anjali Sharma,Agile vs Waterfall Study,ACM Transactions,rejected
+Dr. Meena Gupta,Data Mining Techniques,Elsevier Journal,published
+Dr. Lakshmi Priya,Clustering Algorithms Comparison,Springer Journal,rejected
+Dr. Sanjay Patel,Multi-cloud Architecture,Elsevier Journal,published
+Dr. Pooja Verma,Gene Prediction Models,IEEE Access,published
+Dr. Ravi Teja,Computer Vision in Autonomous Vehicles,Elsevier Journal,published
+Dr. Lakshmi Priya,Clustering Algorithms Comparison,Springer Journal,rejected
+Dr. Kiran Reddy,Computer Vision in Autonomous Vehicles,Springer Journal,rejected
+Dr. Divya Rani,Clustering Algorithms Comparison,IEEE Transactions,published
+Dr. Rohit Sharma,Energy Efficient Routing Protocols,ACM Transactions,rejected
+Dr. Ramesh Kumar,Computer Vision in Autonomous Vehicles,IEEE Access,rejected
+Dr. Divya Rani,Big Data Analytics in Healthcare,IEEE Access,published
+Dr. Kavya Nair,Deep Learning for Medical Imaging,Springer Journal,published
+Dr. Sita Devi,Gene Prediction Models,ACM Transactions,rejected
+Dr. Arun Kumar,Sentiment Analysis using BERT,ACM Transactions,published
+Dr. Rohit Sharma,Edge Computing in IoT,Elsevier Journal,published
+Dr. Pooja Verma,Software Engineering Best Practices,IEEE Transactions,rejected
+Dr. Ramesh Kumar,Edge Computing in IoT,IEEE Transactions,rejected
+Dr. Sita Devi,Human Computer Interaction Trends,Elsevier Journal,published
+Dr. Sita Devi,Cloud Computing Security,ACM Transactions,rejected
+Dr. Divya Rani,Reinforcement Learning Applications,IEEE Access,rejected
+Dr. Kiran Reddy,Gene Prediction Models,Springer Journal,published
+Dr. Pooja Verma,IoT based Smart Agriculture,Springer Journal,accepted
+Dr. Lakshmi Priya,IoT based Smart Agriculture,Elsevier Journal,accepted
+Dr. Sanjay Patel,Bioinformatics using AI,IEEE Access,published
+Dr. Anjali Sharma,Cloud Computing Security,Elsevier Journal,rejected
