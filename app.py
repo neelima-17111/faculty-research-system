@@ -48,13 +48,12 @@ def signup(u, p):
 
 # ---------------- LOGIN ----------------
 if not st.session_state.logged_in:
-    st.title("📚 Faculty Research System")
-    st.subheader("🔐 Login / Signup")
+    st.title("🔐 Login / Signup")
 
     choice = st.radio("Choose Option", ["Login", "Signup"], key="auth")
 
-    user = st.text_input("Username", key="login_user")
-    pwd = st.text_input("Password", type="password", key="login_pass")
+    user = st.text_input("Username", key="user")
+    pwd = st.text_input("Password", type="password", key="pass")
 
     if choice == "Login":
         if st.button("Login", key="login_btn"):
@@ -73,11 +72,7 @@ if not st.session_state.logged_in:
 
     st.stop()
 
-# ---------------- MAIN TITLE ----------------
-st.title("📚 Faculty Research System")
-
 # ---------------- LOAD DATA ----------------
-@st.cache_data
 def load_data():
     df = pd.read_sql("SELECT * FROM faculty_data", conn)
     if not df.empty:
@@ -111,25 +106,9 @@ def delete_data(fid):
     cursor.execute("DELETE FROM faculty_data WHERE faculty_id=?", (fid,))
     conn.commit()
 
-# 🔥 LARGE CSV HANDLING
-def insert_csv(file):
-    chunksize = 5000
-    progress = st.progress(0)
-    total_rows = 0
-
-    for chunk in pd.read_csv(file, chunksize=chunksize):
-        chunk.columns = chunk.columns.str.lower()
-
-        chunk['faculty_id'] = ["FID-" + str(uuid.uuid4())[:8] for _ in range(len(chunk))]
-        chunk = chunk[['faculty_id', 'faculty', 'title', 'journal', 'status']]
-
-        chunk.to_sql('faculty_data', conn, if_exists='append', index=False)
-
-        total_rows += len(chunk)
-        progress.progress(min(total_rows / 100000, 1.0))
-
-    progress.empty()
-    st.success("CSV Inserted Successfully 🚀")
+def insert_csv(df):
+    for _, row in df.iterrows():
+        insert_data(row['faculty'], row['title'], row['journal'], row['status'])
 
 def predict_status(title, journal):
     vec = vectorizer.transform([title + " " + journal])
@@ -161,28 +140,20 @@ with tab1:
     if st.button("Predict", key="pred_btn"):
         if not data.empty and pt and pj:
             result, conf = predict_status(pt, pj)
-            st.success(result)
+            st.success(f"{result}")
             st.info(f"Confidence: {conf}%")
         else:
             st.warning("Need data")
 
 # ---------------- TAB 2 ----------------
 with tab2:
-    st.subheader("🔍 Search Faculty")
+    st.subheader("🔍 Search")
 
-    name = st.text_input("Search by Faculty Name", key="search_name")
-    fid_search = st.text_input("Search by Faculty ID", key="search_id")
+    name = st.text_input("Faculty Name", key="search_name")
 
     if st.button("Search", key="search_btn"):
-        result_df = data
-
-        if name:
-            result_df = result_df[result_df['faculty'].str.contains(name, case=False, na=False)]
-
-        if fid_search:
-            result_df = result_df[result_df['faculty_id'].str.contains(fid_search, case=False, na=False)]
-
-        st.dataframe(result_df)
+        res = data[data['faculty'].str.contains(name, case=False, na=False)]
+        st.dataframe(res if not res.empty else pd.DataFrame())
 
     st.subheader("🔎 Similar Papers")
 
@@ -221,8 +192,11 @@ with tab4:
     file = st.file_uploader("Upload CSV", type=["csv"], key="csv")
 
     if file:
+        df = pd.read_csv(file)
+        st.dataframe(df)
         if st.button("Insert CSV", key="csv_btn"):
-            insert_csv(file)
+            insert_csv(df)
+            st.success("Inserted")
             st.rerun()
 
     st.subheader("📋 Data")
@@ -236,7 +210,8 @@ with tab4:
             st.success("Deleted")
             st.rerun()
 
-    # ✅ LOGOUT ONLY IN TAB 4
-    if st.button("Logout", key="logout_btn"):
-        st.session_state.logged_in = False
-        st.rerun()
+# ---------------- LOGOUT ----------------
+if st.button("Logout", key="logout"):
+    st.session_state.logged_in = False
+    st.rerun()
+
