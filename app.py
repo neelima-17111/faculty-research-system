@@ -167,9 +167,9 @@ with tab2:
 
         st.dataframe(result_df if not result_df.empty else pd.DataFrame())
 
-    st.subheader("🔎 Similar Papers")
+    st.subheader("🔎 Search Papers")
 
-    q = st.text_input("Keyword", key="search_keyword")
+    q = st.text_input("Title name", key="search_title")
 
     if st.button("Find", key="find_btn"):
         if not data.empty:
