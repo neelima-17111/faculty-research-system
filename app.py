@@ -211,8 +211,13 @@ with tab4:
             st.success("Inserted")
             st.rerun()
 
-    st.subheader("📋 Data")
-    st.dataframe(data)
+    st.markdown(f"📊 Total Records: {len(data)}")
+
+with st.expander("👉 Click to view full data"):
+    if not data.empty:
+        st.dataframe(data)
+    else:
+        st.info("No data available")
 
     did = st.text_input("Enter ID", key="delete_id")
 
