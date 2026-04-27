@@ -234,16 +234,18 @@ with tab4:
             st.info("No data available")
 
     # ✅ DELETE
-   did = st.text_input("Enter Faculty ID", key="delete_id_unique")
+   # ✅ DELETE
+did = st.text_input("Enter Faculty ID", key="delete_id_unique")
 
 if st.button("Delete", key="delete_btn"):
-    st.write("Trying to delete:", did)   # ✅ ADD THIS LINE
+    st.write("Trying to delete:", did)   # debug
 
     if did:
         if delete_data(did):
             st.success("Deleted Successfully")
         else:
             st.error("ID not found")
+
         st.rerun()
             
 
