@@ -35,10 +35,6 @@ conn.commit()
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
-# ensure csv flag exists
-if "csv_uploaded" not in st.session_state:
-    st.session_state.csv_uploaded = False
-
 # ---------------- AUTH ----------------
 def login(u, p):
     return cursor.execute(
@@ -91,31 +87,6 @@ def load_data():
     return df
 
 data = load_data()
-
-# ALWAYS use only uploaded CSV data
-if st.session_state.csv_uploaded:
-    data = st.session_state.current_data.copy()
-    if not data.empty:
-        data.columns = data.columns.str.lower()
-        if 'faculty' in data.columns:
-            data['faculty'] = data['faculty'].astype(str).str.strip()
-        if 'status' in data.columns:
-            data['status'] = data['status'].astype(str).str.capitalize()
-        if 'title' in data.columns and 'journal' in data.columns:
-            data['text'] = data['title'].astype(str) + " " + data['journal'].astype(str)
-else:
-    data = pd.DataFrame()
-
-# Track CSV upload + data state
-if "csv_uploaded" not in st.session_state:
-    st.session_state.csv_uploaded = False
-
-if "current_data" not in st.session_state:
-    st.session_state.current_data = pd.DataFrame()
-
-# Ensure session data always exists safely
-if "current_data" not in st.session_state or st.session_state.current_data is None:
-    st.session_state.current_data = pd.DataFrame()
 
 # ---------------- ML MODEL ----------------
 if not data.empty:
@@ -208,11 +179,11 @@ with tab2:
 with tab3:
     st.subheader("📊 Analytics")
 
-    if st.session_state.csv_uploaded and not data.empty:
+    if not data.empty:
         st.bar_chart(data['status'].value_counts())
         st.line_chart(data['status'].value_counts())
     else:
-        st.info("Upload CSV to see analytics")
+        st.info("No data")
 
 # ---------------- TAB 4 ----------------
 with tab4:
@@ -234,22 +205,14 @@ with tab4:
 
     if file:
         df = pd.read_csv(file)
-        st.dataframe(df)  # CSV Preview
-
+        st.dataframe(df)
         if st.button("Insert CSV", key="csv_btn"):
             insert_csv(df)
             st.success("Inserted")
             st.rerun()
 
-    # If file removed → clear data
-    if file is None:
-        st.session_state.csv_uploaded = False
-        st.session_state.current_data = pd.DataFrame()
-        data = pd.DataFrame()
-        data = pd.DataFrame()
-        data = pd.DataFrame()
-
-    # Data preview removed as requested
+    st.subheader("📋 Data")
+    st.dataframe(data)
 
     did = st.text_input("Enter ID", key="delete_id")
 
@@ -259,7 +222,7 @@ with tab4:
             st.success("Deleted")
             st.rerun()
 
-# ---------------- LOGOUT ----------------
-if st.button("Logout", key="logout"):
-    st.session_state.logged_in = False
-    st.rerun()
+    # ---------------- LOGOUT ----------------
+    if st.button("Logout", key="logout"):
+        st.session_state.logged_in = False
+        st.rerun()
