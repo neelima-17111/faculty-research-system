@@ -107,8 +107,14 @@ def insert_data(name, title, journal, status):
     conn.commit()
 
 def delete_data(fid):
-    cursor.execute("DELETE FROM faculty_data WHERE faculty_id=?", (fid,))
-    conn.commit()
+    cursor.execute("SELECT * FROM faculty_data WHERE faculty_id=?", (fid,))
+    result = cursor.fetchone()
+
+    if result:
+        cursor.execute("DELETE FROM faculty_data WHERE faculty_id=?", (fid,))
+        conn.commit()
+        return True
+    return False
 
 def insert_csv(df):
     for _, row in df.iterrows():
@@ -221,11 +227,15 @@ with st.expander("👉 Click to view full data"):
 
     did = st.text_input("Enter ID", key="delete_id")
 
-    if st.button("Delete", key="delete_btn"):
-        if did:
-            delete_data(did)
-            st.success("Deleted")
-            st.rerun()
+    did = st.text_input("Enter Faculty ID", key="delete_id")
+
+if st.button("Delete", key="delete_btn"):
+    if did:
+        if delete_data(did):
+            st.success("Deleted Successfully")
+        else:
+            st.error("ID not found")
+        st.rerun()
 
     # ---------------- LOGOUT ----------------
     if st.button("Logout", key="logout"):
