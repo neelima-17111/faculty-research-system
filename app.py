@@ -51,20 +51,20 @@ if not st.session_state.logged_in:
     st.title("📚 Faculty Research System")
     st.subheader("🔐 Login / Signup")
 
-    choice = st.radio("Choose Option", ["Login", "Signup"], key="auth")
+    choice = st.radio("Choose Option", ["Login", "Signup"])
 
-    user = st.text_input("Username", key="user")
-    pwd = st.text_input("Password", type="password", key="pass")
+    user = st.text_input("Username")
+    pwd = st.text_input("Password", type="password")
 
     if choice == "Login":
-        if st.button("Login", key="login_btn"):
+        if st.button("Login"):
             if login(user, pwd):
                 st.session_state.logged_in = True
                 st.rerun()
             else:
                 st.error("Invalid credentials")
     else:
-        if st.button("Signup", key="signup_btn"):
+        if st.button("Signup"):
             if user and pwd:
                 signup(user, pwd)
                 st.success("Account created")
@@ -73,7 +73,7 @@ if not st.session_state.logged_in:
 
     st.stop()
 
-# ---------------- MAIN TITLE ----------------
+# ---------------- MAIN ----------------
 st.title("📚 Faculty Research System")
 
 # ---------------- LOAD DATA ----------------
@@ -150,7 +150,7 @@ with tab1:
     if st.button("Predict", key="pred_btn"):
         if not data.empty and pt and pj:
             result, conf = predict_status(pt, pj)
-            st.success(f"{result}")
+            st.success(result)
             st.info(f"Confidence: {conf}%")
         else:
             st.warning("Need data")
@@ -217,25 +217,25 @@ with tab4:
             st.success("Inserted")
             st.rerun()
 
+    # ✅ DATA PREVIEW ONLY HERE
     st.markdown(f"📊 Total Records: {len(data)}")
 
-with st.expander("👉 Click to view full data"):
-    if not data.empty:
-        st.dataframe(data)
-    else:
-        st.info("No data available")
-
-    did = st.text_input("Enter ID", key="delete_id")
-
-    did = st.text_input("Enter Faculty ID", key="delete_id_1")
-
-if st.button("Delete", key="delete_btn"):
-    if did:
-        if delete_data(did):
-            st.success("Deleted Successfully")
+    with st.expander("👉 Click to view full data"):
+        if not data.empty:
+            st.dataframe(data)
         else:
-            st.error("ID not found")
-        st.rerun()
+            st.info("No data available")
+
+    # ✅ DELETE
+    did = st.text_input("Enter Faculty ID", key="delete_id_unique")
+
+    if st.button("Delete", key="delete_btn"):
+        if did:
+            if delete_data(did):
+                st.success("Deleted Successfully")
+            else:
+                st.error("ID not found")
+            st.rerun()
 
     # ---------------- LOGOUT ----------------
     if st.button("Logout", key="logout"):
