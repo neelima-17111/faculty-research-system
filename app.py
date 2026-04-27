@@ -144,7 +144,7 @@ with tab1:
     if st.button("Predict", key="pred_btn"):
         if not data.empty and pt and pj:
             result, conf = predict_status(pt, pj)
-            st.success(f"{result}")
+            st.success(result)
             st.info(f"Confidence: {conf}%")
         else:
             st.warning("Need data")
@@ -205,14 +205,10 @@ with tab4:
 
     if file:
         df = pd.read_csv(file)
-        st.dataframe(df)
         if st.button("Insert CSV", key="csv_btn"):
             insert_csv(df)
             st.success("Inserted")
             st.rerun()
-
-    st.subheader("📋 Data")
-    st.dataframe(data)
 
     did = st.text_input("Enter ID", key="delete_id")
 
@@ -222,7 +218,7 @@ with tab4:
             st.success("Deleted")
             st.rerun()
 
-    # ---------------- LOGOUT ----------------
+    # LOGOUT
     if st.button("Logout", key="logout"):
         st.session_state.logged_in = False
         st.rerun()
