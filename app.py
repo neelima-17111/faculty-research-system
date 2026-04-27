@@ -212,13 +212,16 @@ with tab4:
             insert_data(dn, dt, dj, ds)
             st.success("Added")
 
-        # ✅ CLEAR INPUT FIELDS
-            st.session_state.db_name = ""
-            st.session_state.db_title = ""
-            st.session_state.db_journal = ""
-            st.session_state.db_status = "Published"
+        # ✅ SAFE CLEAR METHOD
+        st.session_state.update({
+            "db_name": "",
+            "db_title": "",
+            "db_journal": "",
+            "db_status": "Published"
+            "delete_id_unique": ""
+        })
 
-            st.rerun()
+        st.rerun()
     st.subheader("📁 Upload CSV")
     file = st.file_uploader("Upload CSV", type=["csv"], key="csv")
 
