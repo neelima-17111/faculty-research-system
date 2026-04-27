@@ -246,14 +246,15 @@ with tab4:
    # ✅ DELETE
 did = st.text_input("Enter Faculty ID", key="delete_id_unique")
 
+st.subheader("🗑️ Delete Record")
+
+did = st.text_input("Enter Faculty ID", key="delete_id_unique")
+
 if st.button("Delete", key="delete_btn"):
-    if did:
+    if did.strip():
         if delete_data(did):
             st.success("Deleted Successfully")
-
-            # ✅ CLEAR DELETE FIELD
-            
-
+            st.session_state.delete_id_unique = ""
         else:
             st.error("ID not found")
 
