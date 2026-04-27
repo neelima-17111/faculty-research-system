@@ -105,14 +105,20 @@ def insert_data(name, title, journal, status):
     cursor.execute("INSERT INTO faculty_data VALUES (?, ?, ?, ?, ?)",
                    (fid, name, title, journal, status.capitalize()))
     conn.commit()
-
 def delete_data(fid):
-    fid = fid.strip().upper()
+    fid = fid.strip().upper()   # ✅ IMPORTANT LINE
+
     cursor.execute("SELECT * FROM faculty_data WHERE UPPER(faculty_id)=?", (fid,))
     result = cursor.fetchone()
 
     if result:
         cursor.execute("DELETE FROM faculty_data WHERE UPPER(faculty_id)=?", (fid,))
+        conn.commit()
+        return True
+    return False
+
+    if result:
+        cursor.execute("DELETE FROM faculty_data WHERE faculty_id=?", (fid,))
         conn.commit()
         return True
     return False
@@ -148,7 +154,7 @@ with tab1:
     pt = st.text_input("Title", key="pred_title")
     pj = st.text_input("Journal", key="pred_journal")
 
-    if st.button("Predict"):
+    if st.button("Predict", key="pred_btn"):
         if not data.empty and pt and pj:
             result, conf = predict_status(pt, pj)
             st.success(result)
@@ -160,10 +166,10 @@ with tab1:
 with tab2:
     st.subheader("🔍 Search Faculty")
 
-    name = st.text_input("Search by Faculty Name")
-    fid_search = st.text_input("Search by Faculty ID")
+    name = st.text_input("Search by Faculty Name", key="search_name")
+    fid_search = st.text_input("Search by Faculty ID", key="search_id")
 
-    if st.button("Search"):
+    if st.button("Search", key="search_btn"):
         result_df = data
 
         if name:
@@ -174,12 +180,21 @@ with tab2:
 
         st.dataframe(result_df if not result_df.empty else pd.DataFrame())
 
+    st.subheader("🔎 Search Papers")
+
+    q = st.text_input("Search by Title Name", key="search_title")
+
+    if st.button("Find", key="find_btn"):
+        if not data.empty:
+            st.dataframe(find_similar(q))
+
 # ---------------- TAB 3 ----------------
 with tab3:
     st.subheader("📊 Analytics")
 
     if not data.empty:
         st.bar_chart(data['status'].value_counts())
+        st.line_chart(data['status'].value_counts())
     else:
         st.info("No data")
 
@@ -187,63 +202,61 @@ with tab3:
 with tab4:
     st.subheader("🗄️ Database")
 
-    # ✅ NEW FORM
-    with st.form("add_form"):
-        dn = st.text_input("Name")
-        dt = st.text_input("Title")
-        dj = st.text_input("Journal")
-        ds = st.selectbox("Status", ["Published","Accepted","Rejected","Under Review"])
+    dn = st.text_input("Name", key="db_name")
+    dt = st.text_input("Title", key="db_title")
+    dj = st.text_input("Journal", key="db_journal")
+    ds = st.selectbox("Status", ["Published","Accepted","Rejected","Under Review"], key="db_status")
 
-        submitted = st.form_submit_button("Add")
+    if st.button("Add", key="add_btn"):
+        if dn and dt and dj:
+            insert_data(dn, dt, dj, ds)
+            st.success("Added")
 
-        if submitted:
-            if dn and dt and dj:
-                insert_data(dn, dt, dj, ds)
-                st.success("Added")
-                st.rerun()
-            else:
-                st.warning("Fill all fields")
-
-            st.session_state.update({
-                "db_name": "",
-                "db_title": "",
-                "db_journal": "",
-                "db_status": "Published",
-                "delete_id_unique": ""
-            })
+        # ✅ CLEAR INPUT FIELDS
+            st.session_state.db_name = ""
+            st.session_state.db_title = ""
+            st.session_state.db_journal = ""
+            st.session_state.db_status = "Published"
 
             st.rerun()
-
     st.subheader("📁 Upload CSV")
-    file = st.file_uploader("Upload CSV", type=["csv"])
+    file = st.file_uploader("Upload CSV", type=["csv"], key="csv")
 
     if file:
         df = pd.read_csv(file)
         st.dataframe(df)
-        if st.button("Insert CSV"):
+        if st.button("Insert CSV", key="csv_btn"):
             insert_csv(df)
             st.success("Inserted")
             st.rerun()
 
+    # ✅ DATA PREVIEW ONLY HERE
     st.markdown(f"📊 Total Records: {len(data)}")
 
     with st.expander("👉 Click to view full data"):
         if not data.empty:
             st.dataframe(data)
+        else:
+            st.info("No data available")
 
-    # DELETE
-    did = st.text_input("Enter Faculty ID", key="delete_id_unique")
+    # ✅ DELETE
+   # ✅ DELETE
+did = st.text_input("Enter Faculty ID", key="delete_id_unique")
 
-    if st.button("Delete"):
-        if did:
-            if delete_data(did):
-                st.success("Deleted Successfully")
-            else:
-                st.error("ID not found")
+if st.button("Delete", key="delete_btn"):
+    if did:
+        if delete_data(did):
+            st.success("Deleted Successfully")
 
-            st.rerun()
+            # ✅ CLEAR DELETE FIELD
+            st.session_state.delete_id_unique = ""
 
-    # LOGOUT
-    if st.button("Logout"):
+        else:
+            st.error("ID not found")
+
+        st.rerun()
+
+    # ---------------- LOGOUT ----------------
+    if st.button("Logout", key="logout"):
         st.session_state.logged_in = False
         st.rerun()
