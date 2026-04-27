@@ -88,9 +88,18 @@ def load_data():
 
 data = load_data()
 
-# Track CSV upload status
+# Use session data instead of DB directly
+if st.session_state.csv_uploaded:
+    data = st.session_state.current_data
+else:
+    data = pd.DataFrame()
+
+# Track CSV upload + data state
 if "csv_uploaded" not in st.session_state:
     st.session_state.csv_uploaded = False
+
+if "current_data" not in st.session_state:
+    st.session_state.current_data = pd.DataFrame()
 
 # ---------------- ML MODEL ----------------
 if not data.empty:
@@ -209,11 +218,16 @@ with tab4:
 
     if file:
         df = pd.read_csv(file)
-        if st.button("Insert CSV", key="csv_btn"):
-            insert_csv(df)
+        st.session_state.current_data = df
+
+        if st.button("Use This CSV", key="csv_btn"):
             st.session_state.csv_uploaded = True
-            st.success("Inserted")
+            st.success("CSV Loaded")
             st.rerun()
+else:
+        # If file removed, clear everything
+        st.session_state.csv_uploaded = False
+        st.session_state.current_data = pd.DataFrame()
 
     # Data preview removed as requested
 
