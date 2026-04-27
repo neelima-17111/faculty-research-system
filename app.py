@@ -89,7 +89,7 @@ def load_data():
 
 data = load_data()
 
-# ---------------- ML MODEL (LIMITED DATA) ----------------
+# ---------------- ML MODEL ----------------
 if not data.empty:
     vectorizer = TfidfVectorizer()
     X = vectorizer.fit_transform(data['text'])
@@ -102,21 +102,28 @@ def generate_id():
     return "FID-" + str(uuid.uuid4())[:8]
 
 def insert_data(name, title, journal, status):
-    fid = generate_id()
-    cursor.execute("INSERT INTO faculty_data VALUES (?, ?, ?, ?, ?)",
-                   (fid, name, title, journal, status.capitalize()))
-    conn.commit()
+    exists = cursor.execute("""
+        SELECT 1 FROM faculty_data 
+        WHERE faculty=? AND title=? AND journal=?
+    """, (name, title, journal)).fetchone()
+
+    if not exists:
+        fid = generate_id()
+        cursor.execute("INSERT INTO faculty_data VALUES (?, ?, ?, ?, ?)",
+                       (fid, name, title, journal, status.capitalize()))
+        conn.commit()
 
 def delete_data(fid):
     cursor.execute("DELETE FROM faculty_data WHERE faculty_id=?", (fid,))
     conn.commit()
 
-# 🔥 CSV INSERT (CHUNK BASED - BIG FILE SAFE)
+# 🔥 CSV INSERT (CHUNK BASED)
 def insert_csv(file):
     chunks = pd.read_csv(file, chunksize=5000)
     for chunk in chunks:
         chunk.to_sql("faculty_data", conn, if_exists="append", index=False)
 
+# ---------------- ML ----------------
 def predict_status(title, journal):
     vec = vectorizer.transform([title + " " + journal])
     probs = model.predict_proba(vec)[0]
@@ -152,7 +159,7 @@ with tab1:
         else:
             st.warning("Need data")
 
-# ---------------- TAB 2 (DB SEARCH) ----------------
+# ---------------- TAB 2 ----------------
 with tab2:
     st.subheader("🔍 Search Faculty")
 
@@ -172,7 +179,7 @@ with tab2:
             params.append(f"%{fid_search}%")
 
         result_df = pd.read_sql(query, conn, params=params)
-        st.dataframe(result_df.head(100))  # LIMIT UI
+        st.dataframe(result_df.head(100))
 
     st.subheader("🔎 Similar Papers")
 
@@ -193,6 +200,13 @@ with tab3:
 with tab4:
     st.subheader("🗄️ Database")
 
+    # 🔴 RESET BUTTON
+    if st.button("⚠️ Clear Database", key="clear_db"):
+        cursor.execute("DELETE FROM faculty_data")
+        conn.commit()
+        st.success("Database Cleared")
+        st.rerun()
+
     dn = st.text_input("Name", key="db_name")
     dt = st.text_input("Title", key="db_title")
     dj = st.text_input("Journal", key="db_journal")
@@ -204,14 +218,20 @@ with tab4:
             st.success("Added")
             st.rerun()
 
-    st.subheader("📁 Upload CSV (Large File Safe)")
-    file = st.file_uploader("Upload CSV", type=["csv"], key="csv")
+    # 🔥 CSV Upload Control
+    count = cursor.execute("SELECT COUNT(*) FROM faculty_data").fetchone()[0]
 
-    if file:
-        if st.button("Insert CSV", key="csv_btn"):
-            insert_csv(file)
-            st.success("Inserted Successfully")
-            st.rerun()
+    if count > 0:
+        st.warning("Data already exists. Clear DB to upload new CSV.")
+    else:
+        st.subheader("📁 Upload CSV (One-time)")
+        file = st.file_uploader("Upload CSV", type=["csv"], key="csv")
+
+        if file:
+            if st.button("Insert CSV", key="csv_btn"):
+                insert_csv(file)
+                st.success("CSV Inserted Successfully")
+                st.rerun()
 
     st.subheader("📋 Preview Data")
     preview = pd.read_sql("SELECT * FROM faculty_data LIMIT 100", conn)
