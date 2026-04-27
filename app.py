@@ -6,6 +6,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics.pairwise import cosine_similarity
 
+# ---------------- CONFIG ----------------
 st.set_page_config(page_title="Faculty Research System", layout="centered")
 
 # ---------------- DATABASE ----------------
@@ -50,18 +51,19 @@ def signup(u, p):
 if not st.session_state.logged_in:
     st.title("📚 Faculty Research System")
 
-    choice = st.radio("Choose Option", ["Login", "Signup"])
+    mode = st.radio("Choose Option", ["Login", "Signup"])
 
     user = st.text_input("Username")
     pwd = st.text_input("Password", type="password")
 
-    if choice == "Login":
+    if mode == "Login":
         if st.button("Login"):
             if login(user, pwd):
                 st.session_state.logged_in = True
                 st.rerun()
             else:
                 st.error("Invalid credentials")
+
     else:
         if st.button("Signup"):
             if user and pwd:
@@ -80,9 +82,9 @@ def load_data():
     df = pd.read_sql("SELECT * FROM faculty_data", conn)
     if not df.empty:
         df.columns = df.columns.str.lower()
-        df['faculty'] = df['faculty'].astype(str).str.strip()
-        df['status'] = df['status'].str.capitalize()
-        df['text'] = df['title'].astype(str) + " " + df['journal'].astype(str)
+        df["faculty"] = df["faculty"].astype(str).str.strip()
+        df["status"] = df["status"].str.capitalize()
+        df["text"] = df["title"].astype(str) + " " + df["journal"].astype(str)
     return df
 
 data = load_data()
@@ -90,10 +92,10 @@ data = load_data()
 # ---------------- ML MODEL ----------------
 if not data.empty:
     vectorizer = TfidfVectorizer()
-    X = vectorizer.fit_transform(data['text'])
+    X = vectorizer.fit_transform(data["text"])
 
-    model = LogisticRegression(class_weight='balanced', max_iter=200)
-    model.fit(X, data['status'])
+    model = LogisticRegression(class_weight="balanced", max_iter=200)
+    model.fit(X, data["status"])
 
 # ---------------- FUNCTIONS ----------------
 def generate_id():
@@ -111,23 +113,15 @@ def delete_data(fid):
     fid = fid.strip().upper()
 
     cursor.execute(
-        "SELECT * FROM faculty_data WHERE UPPER(faculty_id)=?",
+        "DELETE FROM faculty_data WHERE UPPER(faculty_id)=?",
         (fid,)
     )
-    result = cursor.fetchone()
-
-    if result:
-        cursor.execute(
-            "DELETE FROM faculty_data WHERE UPPER(faculty_id)=?",
-            (fid,)
-        )
-        conn.commit()
-        return True
-    return False
+    conn.commit()
+    return cursor.rowcount > 0
 
 def insert_csv(df):
     for _, row in df.iterrows():
-        insert_data(row['faculty'], row['title'], row['journal'], row['status'])
+        insert_data(row["faculty"], row["title"], row["journal"], row["status"])
 
 def predict_status(title, journal):
     vec = vectorizer.transform([title + " " + journal])
@@ -137,9 +131,11 @@ def predict_status(title, journal):
     return result, confidence
 
 def find_similar(query):
+    if data.empty:
+        return pd.DataFrame()
     q_vec = vectorizer.transform([query])
     sim = cosine_similarity(q_vec, X)[0]
-    return data[sim > 0.3] if not data.empty else pd.DataFrame()
+    return data[sim > 0.3]
 
 # ---------------- TABS ----------------
 tab1, tab2, tab3, tab4 = st.tabs([
@@ -153,34 +149,36 @@ tab1, tab2, tab3, tab4 = st.tabs([
 with tab1:
     st.subheader("🔮 Predict Status")
 
-    pt = st.text_input("Title")
-    pj = st.text_input("Journal")
+    title = st.text_input("Title")
+    journal = st.text_input("Journal")
 
     if st.button("Predict"):
-        if not data.empty and pt and pj:
-            result, conf = predict_status(pt, pj)
+        if not data.empty and title and journal:
+            result, conf = predict_status(title, journal)
             st.success(result)
             st.info(f"Confidence: {conf}%")
+        else:
+            st.warning("Not enough data")
 
 # ---------------- TAB 2 ----------------
 with tab2:
     st.subheader("🔍 Search Faculty")
 
     name = st.text_input("Faculty Name")
-    fid_search = st.text_input("Faculty ID")
+    fid = st.text_input("Faculty ID")
 
     if st.button("Search"):
-        result_df = data
+        df = data
 
         if name:
-            result_df = result_df[result_df['faculty'].str.contains(name, case=False, na=False)]
+            df = df[df["faculty"].str.contains(name, case=False, na=False)]
 
-        if fid_search:
-            result_df = result_df[result_df['faculty_id'].str.contains(fid_search, case=False, na=False)]
+        if fid:
+            df = df[df["faculty_id"].str.contains(fid, case=False, na=False)]
 
-        st.dataframe(result_df)
+        st.dataframe(df)
 
-    st.subheader("🔎 Search Papers")
+    st.subheader("🔎 Similar Papers")
 
     q = st.text_input("Search Title")
 
@@ -192,24 +190,23 @@ with tab3:
     st.subheader("📊 Analytics")
 
     if not data.empty:
-        st.bar_chart(data['status'].value_counts())
-        st.line_chart(data['status'].value_counts())
+        st.bar_chart(data["status"].value_counts())
     else:
-        st.info("No data")
+        st.info("No data available")
 
 # ---------------- TAB 4 ----------------
 with tab4:
     st.subheader("🗄️ Database")
 
-    dn = st.text_input("Name", key="db_name")
-    dt = st.text_input("Title", key="db_title")
-    dj = st.text_input("Journal", key="db_journal")
-    ds = st.selectbox("Status", ["Published","Accepted","Rejected","Under Review"], key="db_status")
+    name = st.text_input("Name", key="name")
+    title = st.text_input("Title", key="title")
+    journal = st.text_input("Journal", key="journal")
+    status = st.selectbox("Status", ["Published", "Accepted", "Rejected", "Under Review"])
 
-    if st.button("Add"):
-        if dn and dt and dj:
-            insert_data(dn, dt, dj, ds)
-            st.success("Added")
+    if st.button("Add Record"):
+        if name and title and journal:
+            insert_data(name, title, journal, status)
+            st.success("Record Added")
             st.rerun()
 
     st.subheader("📁 Upload CSV")
@@ -222,7 +219,7 @@ with tab4:
 
         if st.button("Insert CSV"):
             insert_csv(df)
-            st.success("Inserted")
+            st.success("Uploaded")
             st.rerun()
 
     st.markdown(f"📊 Total Records: {len(data)}")
@@ -233,11 +230,11 @@ with tab4:
     # ---------------- DELETE ----------------
     st.subheader("🗑️ Delete Record")
 
-    did = st.text_input("Enter Faculty ID", key="delete_input")
+    delete_id = st.text_input("Enter Faculty ID")
 
     if st.button("Delete"):
-        if did.strip():
-            if delete_data(did):
+        if delete_id:
+            if delete_data(delete_id):
                 st.success("Deleted Successfully")
             else:
                 st.error("ID not found")
