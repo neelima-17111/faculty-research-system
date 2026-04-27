@@ -51,20 +51,20 @@ if not st.session_state.logged_in:
     st.title("📚 Faculty Research System")
     st.subheader("🔐 Login / Signup")
 
-    choice = st.radio("Choose Option", ["Login", "Signup"], key="auth")
+    choice = st.radio("Choose Option", ["Login", "Signup"])
 
-    user = st.text_input("Username", key="user")
-    pwd = st.text_input("Password", type="password", key="pass")
+    user = st.text_input("Username")
+    pwd = st.text_input("Password", type="password")
 
     if choice == "Login":
-        if st.button("Login", key="login_btn"):
+        if st.button("Login"):
             if login(user, pwd):
                 st.session_state.logged_in = True
                 st.rerun()
             else:
                 st.error("Invalid credentials")
     else:
-        if st.button("Signup", key="signup_btn"):
+        if st.button("Signup"):
             if user and pwd:
                 signup(user, pwd)
                 st.success("Account created")
@@ -73,7 +73,7 @@ if not st.session_state.logged_in:
 
     st.stop()
 
-# ---------------- MAIN TITLE ----------------
+# ---------------- MAIN ----------------
 st.title("📚 Faculty Research System")
 
 # ---------------- LOAD DATA ----------------
@@ -107,8 +107,14 @@ def insert_data(name, title, journal, status):
     conn.commit()
 
 def delete_data(fid):
-    cursor.execute("DELETE FROM faculty_data WHERE faculty_id=?", (fid,))
-    conn.commit()
+    cursor.execute("SELECT * FROM faculty_data WHERE faculty_id=?", (fid,))
+    result = cursor.fetchone()
+
+    if result:
+        cursor.execute("DELETE FROM faculty_data WHERE faculty_id=?", (fid,))
+        conn.commit()
+        return True
+    return False
 
 def insert_csv(df):
     for _, row in df.iterrows():
@@ -138,13 +144,13 @@ tab1, tab2, tab3, tab4 = st.tabs([
 with tab1:
     st.subheader("🔮 Predict Status")
 
-    pt = st.text_input("Title", key="pred_title")
-    pj = st.text_input("Journal", key="pred_journal")
+    pt = st.text_input("Title")
+    pj = st.text_input("Journal")
 
-    if st.button("Predict", key="pred_btn"):
+    if st.button("Predict"):
         if not data.empty and pt and pj:
             result, conf = predict_status(pt, pj)
-            st.success(f"{result}")
+            st.success(result)
             st.info(f"Confidence: {conf}%")
         else:
             st.warning("Need data")
@@ -153,10 +159,10 @@ with tab1:
 with tab2:
     st.subheader("🔍 Search Faculty")
 
-    name = st.text_input("Search by Faculty Name", key="search_name")
-    fid_search = st.text_input("Search by Faculty ID", key="search_id")
+    name = st.text_input("Search by Faculty Name")
+    fid_search = st.text_input("Search by Faculty ID")
 
-    if st.button("Search", key="search_btn"):
+    if st.button("Search"):
         result_df = data
 
         if name:
@@ -169,9 +175,9 @@ with tab2:
 
     st.subheader("🔎 Similar Papers")
 
-    q = st.text_input("Keyword", key="search_keyword")
+    q = st.text_input("Keyword")
 
-    if st.button("Find", key="find_btn"):
+    if st.button("Find"):
         if not data.empty:
             st.dataframe(find_similar(q))
 
@@ -189,40 +195,44 @@ with tab3:
 with tab4:
     st.subheader("🗄️ Database")
 
-    dn = st.text_input("Name", key="db_name")
-    dt = st.text_input("Title", key="db_title")
-    dj = st.text_input("Journal", key="db_journal")
-    ds = st.selectbox("Status", ["Published","Accepted","Rejected","Under Review"], key="db_status")
+    dn = st.text_input("Name")
+    dt = st.text_input("Title")
+    dj = st.text_input("Journal")
+    ds = st.selectbox("Status", ["Published","Accepted","Rejected","Under Review"])
 
-    if st.button("Add", key="add_btn"):
+    if st.button("Add"):
         if dn and dt and dj:
             insert_data(dn, dt, dj, ds)
             st.success("Added")
             st.rerun()
 
     st.subheader("📁 Upload CSV")
-    file = st.file_uploader("Upload CSV", type=["csv"], key="csv")
+    file = st.file_uploader("Upload CSV", type=["csv"])
 
     if file:
         df = pd.read_csv(file)
         st.dataframe(df)
-        if st.button("Insert CSV", key="csv_btn"):
+
+        if st.button("Insert CSV"):
             insert_csv(df)
             st.success("Inserted")
             st.rerun()
 
-    st.subheader("📋 Data")
-    st.dataframe(data)
+    # ❌ Removed Data Preview
 
-    did = st.text_input("Enter ID", key="delete_id")
+    st.subheader("🗑️ Delete Record")
 
-    if st.button("Delete", key="delete_btn"):
+    did = st.text_input("Enter Faculty ID")
+
+    if st.button("Delete"):
         if did:
-            delete_data(did)
-            st.success("Deleted")
+            if delete_data(did):
+                st.success("Deleted Successfully")
+            else:
+                st.error("Invalid ID")
             st.rerun()
 
     # ---------------- LOGOUT ----------------
-    if st.button("Logout", key="logout"):
+    if st.button("Logout"):
         st.session_state.logged_in = False
         st.rerun()
