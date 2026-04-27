@@ -5,15 +5,20 @@ import uuid
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics.pairwise import cosine_similarity
+import os
 
 st.set_page_config(page_title="Faculty Research System", layout="centered")
+
+# ---------------- DELETE OLD DB ----------------
+if os.path.exists("faculty.db"):
+    os.remove("faculty.db")   # 🔥 deletes old data
 
 # ---------------- DATABASE ----------------
 conn = sqlite3.connect("faculty.db", check_same_thread=False)
 cursor = conn.cursor()
 
 cursor.execute("""
-CREATE TABLE IF NOT EXISTS faculty_data (
+CREATE TABLE faculty_data (
     faculty_id TEXT,
     faculty TEXT,
     title TEXT,
@@ -23,7 +28,7 @@ CREATE TABLE IF NOT EXISTS faculty_data (
 """)
 
 cursor.execute("""
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE users (
     username TEXT,
     password TEXT
 )
@@ -108,9 +113,7 @@ def insert_data(name, title, journal, status):
 
 def delete_data(fid):
     cursor.execute("SELECT * FROM faculty_data WHERE faculty_id=?", (fid,))
-    result = cursor.fetchone()
-
-    if result:
+    if cursor.fetchone():
         cursor.execute("DELETE FROM faculty_data WHERE faculty_id=?", (fid,))
         conn.commit()
         return True
@@ -121,6 +124,8 @@ def insert_csv(df):
         insert_data(row['faculty'], row['title'], row['journal'], row['status'])
 
 def predict_status(title, journal):
+    if data.empty:
+        return None, 0
     vec = vectorizer.transform([title + " " + journal])
     probs = model.predict_proba(vec)[0]
     result = model.classes_[probs.argmax()]
@@ -128,6 +133,8 @@ def predict_status(title, journal):
     return result, confidence
 
 def find_similar(query):
+    if data.empty:
+        return pd.DataFrame()
     q_vec = vectorizer.transform([query])
     sim = cosine_similarity(q_vec, X)[0]
     return data[sim > 0.3]
@@ -148,12 +155,12 @@ with tab1:
     pj = st.text_input("Journal")
 
     if st.button("Predict"):
-        if not data.empty and pt and pj:
+        if pt and pj and not data.empty:
             result, conf = predict_status(pt, pj)
             st.success(result)
             st.info(f"Confidence: {conf}%")
         else:
-            st.warning("Need data")
+            st.warning("Add data first")
 
 # ---------------- TAB 2 ----------------
 with tab2:
@@ -178,8 +185,7 @@ with tab2:
     q = st.text_input("Keyword")
 
     if st.button("Find"):
-        if not data.empty:
-            st.dataframe(find_similar(q))
+        st.dataframe(find_similar(q))
 
 # ---------------- TAB 3 ----------------
 with tab3:
@@ -218,8 +224,6 @@ with tab4:
             st.success("Inserted")
             st.rerun()
 
-    # ❌ Removed Data Preview
-
     st.subheader("🗑️ Delete Record")
 
     did = st.text_input("Enter Faculty ID")
@@ -232,7 +236,6 @@ with tab4:
                 st.error("Invalid ID")
             st.rerun()
 
-    # ---------------- LOGOUT ----------------
     if st.button("Logout"):
         st.session_state.logged_in = False
         st.rerun()
