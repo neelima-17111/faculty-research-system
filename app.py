@@ -228,14 +228,13 @@ with tab4:
     st.subheader("📁 Upload CSV")
     file = st.file_uploader("Upload CSV", type=["csv"], key="csv")
 
-    if file is not None:
+    if file:
         df = pd.read_csv(file)
-        st.dataframe(df)  # preview uploaded file
+        st.dataframe(df)  # CSV Preview
 
-        if st.button("Use This CSV", key="csv_btn"):
-            st.session_state.current_data = df
-            st.session_state.csv_uploaded = True
-            st.success("CSV Loaded")
+        if st.button("Insert CSV", key="csv_btn"):
+            insert_csv(df)
+            st.success("Inserted")
             st.rerun()
 
     # If file removed → clear data
