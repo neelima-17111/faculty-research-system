@@ -208,10 +208,17 @@ with tab4:
     ds = st.selectbox("Status", ["Published","Accepted","Rejected","Under Review"], key="db_status")
 
     if st.button("Add", key="add_btn"):
-        if dn and dt and dj:
-            insert_data(dn, dt, dj, ds)
-            st.success("Added")
-            st.rerun()
+    if dn and dt and dj:
+        insert_data(dn, dt, dj, ds)
+        st.success("Added")
+
+        # ✅ CLEAR INPUT FIELDS
+        st.session_state.db_name = ""
+        st.session_state.db_title = ""
+        st.session_state.db_journal = ""
+        st.session_state.db_status = "Published"
+
+        st.rerun()
 
     st.subheader("📁 Upload CSV")
     file = st.file_uploader("Upload CSV", type=["csv"], key="csv")
@@ -238,16 +245,17 @@ with tab4:
 did = st.text_input("Enter Faculty ID", key="delete_id_unique")
 
 if st.button("Delete", key="delete_btn"):
-    st.write("Trying to delete:", did)   # debug
-
     if did:
         if delete_data(did):
             st.success("Deleted Successfully")
+
+            # ✅ CLEAR DELETE FIELD
+            st.session_state.delete_id_unique = ""
+
         else:
             st.error("ID not found")
 
         st.rerun()
-            
 
     # ---------------- LOGOUT ----------------
     if st.button("Logout", key="logout"):
