@@ -187,10 +187,24 @@ with tab2:
 
 # ---------------- TAB 3 ----------------
 with tab3:
-    st.subheader("📊 Analytics")
+    st.subheader("📊 Analytics Dashboard")
 
     if not data.empty:
-        st.bar_chart(data["status"].value_counts())
+
+        # Count status
+        status_counts = data["status"].value_counts().reset_index()
+        status_counts.columns = ["Status", "Count"]
+
+        # Bar chart
+        st.bar_chart(status_counts.set_index("Status"))
+
+        # Line chart (FIXED)
+        st.line_chart(status_counts.set_index("Status"))
+
+        # Extra info
+        st.write("Status Distribution Table")
+        st.dataframe(status_counts)
+
     else:
         st.info("No data available")
 
