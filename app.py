@@ -109,6 +109,10 @@ if "csv_uploaded" not in st.session_state:
 if "current_data" not in st.session_state:
     st.session_state.current_data = pd.DataFrame()
 
+# Safety: ensure attribute always exists
+try:
+    _ = st.sessio
+
 # ---------------- ML MODEL ----------------
 if not data.empty:
     vectorizer = TfidfVectorizer()
