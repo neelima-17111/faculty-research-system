@@ -105,10 +105,17 @@ def insert_data(name, title, journal, status):
     cursor.execute("INSERT INTO faculty_data VALUES (?, ?, ?, ?, ?)",
                    (fid, name, title, journal, status.capitalize()))
     conn.commit()
-
 def delete_data(fid):
-    cursor.execute("SELECT * FROM faculty_data WHERE faculty_id=?", (fid,))
+    fid = fid.strip().upper()   # ✅ IMPORTANT LINE
+
+    cursor.execute("SELECT * FROM faculty_data WHERE UPPER(faculty_id)=?", (fid,))
     result = cursor.fetchone()
+
+    if result:
+        cursor.execute("DELETE FROM faculty_data WHERE UPPER(faculty_id)=?", (fid,))
+        conn.commit()
+        return True
+    return False
 
     if result:
         cursor.execute("DELETE FROM faculty_data WHERE faculty_id=?", (fid,))
@@ -227,15 +234,18 @@ with tab4:
             st.info("No data available")
 
     # ✅ DELETE
-    did = st.text_input("Enter Faculty ID", key="delete_id_unique")
+   did = st.text_input("Enter Faculty ID", key="delete_id_unique")
 
-    if st.button("Delete", key="delete_btn"):
-        if did:
-            if delete_data(did):
-                st.success("Deleted Successfully")
-            else:
-                st.error("ID not found")
-            st.rerun()
+if st.button("Delete", key="delete_btn"):
+    st.write("Trying to delete:", did)   # ✅ ADD THIS LINE
+
+    if did:
+        if delete_data(did):
+            st.success("Deleted Successfully")
+        else:
+            st.error("ID not found")
+        st.rerun()
+            
 
     # ---------------- LOGOUT ----------------
     if st.button("Logout", key="logout"):
