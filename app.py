@@ -227,7 +227,7 @@ with st.expander("👉 Click to view full data"):
 
     did = st.text_input("Enter ID", key="delete_id")
 
-    did = st.text_input("Enter Faculty ID", key="delete_id")
+    did = st.text_input("Enter Faculty ID", key="delete_id_1")
 
 if st.button("Delete", key="delete_btn"):
     if did:
