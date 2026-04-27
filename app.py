@@ -209,17 +209,16 @@ with tab4:
 
     if st.button("Add", key="add_btn"):
         if dn and dt and dj:
-        insert_data(dn, dt, dj, ds)
-        st.success("Added")
+            insert_data(dn, dt, dj, ds)
+            st.success("Added")
 
         # ✅ CLEAR INPUT FIELDS
-        st.session_state.db_name = ""
-        st.session_state.db_title = ""
-        st.session_state.db_journal = ""
-        st.session_state.db_status = "Published"
+            st.session_state.db_name = ""
+            st.session_state.db_title = ""
+            st.session_state.db_journal = ""
+            st.session_state.db_status = "Published"
 
-        st.rerun()
-
+            st.rerun()
     st.subheader("📁 Upload CSV")
     file = st.file_uploader("Upload CSV", type=["csv"], key="csv")
 
