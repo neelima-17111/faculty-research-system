@@ -51,69 +51,59 @@ if not st.session_state.logged_in:
     st.title("📚 Faculty Research System")
     st.subheader("🔐 Login / Signup")
 
-    choice = st.radio("Choose Option", ["Login", "Signup"], key="auth")
+    choice = st.radio("Choose Option", ["Login", "Signup"])
 
-    user = st.text_input("Username", key="user")
-    pwd = st.text_input("Password", type="password", key="pass")
+    user = st.text_input("Username")
+    pwd = st.text_input("Password", type="password")
 
     if choice == "Login":
-        if st.button("Login", key="login_btn"):
+        if st.button("Login"):
             if login(user, pwd):
                 st.session_state.logged_in = True
                 st.rerun()
             else:
                 st.error("Invalid credentials")
     else:
-        if st.button("Signup", key="signup_btn"):
+        if st.button("Signup"):
             if user and pwd:
                 signup(user, pwd)
                 st.success("Account created")
-            else:
-                st.warning("Enter details")
 
     st.stop()
 
-# ---------------- MAIN TITLE ----------------
-st.title("📚 Faculty Research System")
-
-# ---------------- LOAD DATA ----------------
-def load_data():
-    df = pd.read_sql("SELECT * FROM faculty_data", conn)
-    if not df.empty:
-        df.columns = df.columns.str.lower()
-        df['faculty'] = df['faculty'].astype(str).str.strip()
-        df['status'] = df['status'].str.capitalize()
-        df['text'] = df['title'].astype(str) + " " + df['journal'].astype(str)
-    return df
-
-data = load_data()
-
-# ---------------- ML MODEL ----------------
-if not data.empty:
-    vectorizer = TfidfVectorizer()
-    X = vectorizer.fit_transform(data['text'])
-
-    model = LogisticRegression(class_weight='balanced', max_iter=200)
-    model.fit(X, data['status'])
-
-# ---------------- FUNCTIONS ----------------
+# ---------------- HELPERS ----------------
 def generate_id():
     return "FID-" + str(uuid.uuid4())[:8]
 
 def insert_data(name, title, journal, status):
     fid = generate_id()
     cursor.execute("INSERT INTO faculty_data VALUES (?, ?, ?, ?, ?)",
-                   (fid, name, title, journal, status.capitalize()))
+                   (fid, name, title, journal, status))
     conn.commit()
 
 def delete_data(fid):
     cursor.execute("DELETE FROM faculty_data WHERE faculty_id=?", (fid,))
     conn.commit()
 
-def insert_csv(df):
-    for _, row in df.iterrows():
-        insert_data(row['faculty'], row['title'], row['journal'], row['status'])
+# ---------------- LIMITED DATA LOAD ----------------
+@st.cache_data
+def load_sample():
+    df = pd.read_sql("SELECT * FROM faculty_data LIMIT 2000", conn)
+    if not df.empty:
+        df['text'] = df['title'] + " " + df['journal']
+    return df
 
+data = load_sample()
+
+# ---------------- ML MODEL (LIMITED DATA ONLY) ----------------
+if not data.empty:
+    vectorizer = TfidfVectorizer()
+    X = vectorizer.fit_transform(data['text'])
+
+    model = LogisticRegression(max_iter=200)
+    model.fit(X, data['status'])
+
+# ---------------- FUNCTIONS ----------------
 def predict_status(title, journal):
     vec = vectorizer.transform([title + " " + journal])
     probs = model.predict_proba(vec)[0]
@@ -138,40 +128,44 @@ tab1, tab2, tab3, tab4 = st.tabs([
 with tab1:
     st.subheader("🔮 Predict Status")
 
-    pt = st.text_input("Title", key="pred_title")
-    pj = st.text_input("Journal", key="pred_journal")
+    pt = st.text_input("Title")
+    pj = st.text_input("Journal")
 
-    if st.button("Predict", key="pred_btn"):
+    if st.button("Predict"):
         if not data.empty and pt and pj:
             result, conf = predict_status(pt, pj)
-            st.success(f"{result}")
+            st.success(result)
             st.info(f"Confidence: {conf}%")
         else:
             st.warning("Need data")
 
-# ---------------- TAB 2 ----------------
+# ---------------- TAB 2 (DB SEARCH OPTIMIZED) ----------------
 with tab2:
     st.subheader("🔍 Search Faculty")
 
-    name = st.text_input("Search by Faculty Name", key="search_name")
-    fid_search = st.text_input("Search by Faculty ID", key="search_id")
+    name = st.text_input("Faculty Name")
+    fid_search = st.text_input("Faculty ID")
 
-    if st.button("Search", key="search_btn"):
-        result_df = data
+    if st.button("Search"):
+        query = "SELECT * FROM faculty_data WHERE 1=1"
+        params = []
 
         if name:
-            result_df = result_df[result_df['faculty'].str.contains(name, case=False, na=False)]
+            query += " AND faculty LIKE ?"
+            params.append(f"%{name}%")
 
         if fid_search:
-            result_df = result_df[result_df['faculty_id'].str.contains(fid_search, case=False, na=False)]
+            query += " AND faculty_id LIKE ?"
+            params.append(f"%{fid_search}%")
 
-        st.dataframe(result_df if not result_df.empty else pd.DataFrame())
+        result_df = pd.read_sql(query, conn, params=params)
+        st.dataframe(result_df.head(100))  # LIMIT UI
 
     st.subheader("🔎 Similar Papers")
 
-    q = st.text_input("Keyword", key="search_keyword")
+    q = st.text_input("Keyword")
 
-    if st.button("Find", key="find_btn"):
+    if st.button("Find"):
         if not data.empty:
             st.dataframe(find_similar(q))
 
@@ -179,50 +173,46 @@ with tab2:
 with tab3:
     st.subheader("📊 Analytics")
 
-    if not data.empty:
-        st.bar_chart(data['status'].value_counts())
-        st.line_chart(data['status'].value_counts())
-    else:
-        st.info("No data")
+    df = pd.read_sql("SELECT status, COUNT(*) as count FROM faculty_data GROUP BY status", conn)
+    st.bar_chart(df.set_index("status"))
 
 # ---------------- TAB 4 ----------------
 with tab4:
     st.subheader("🗄️ Database")
 
-    dn = st.text_input("Name", key="db_name")
-    dt = st.text_input("Title", key="db_title")
-    dj = st.text_input("Journal", key="db_journal")
-    ds = st.selectbox("Status", ["Published","Accepted","Rejected","Under Review"], key="db_status")
+    dn = st.text_input("Name")
+    dt = st.text_input("Title")
+    dj = st.text_input("Journal")
+    ds = st.selectbox("Status", ["Published","Accepted","Rejected","Under Review"])
 
-    if st.button("Add", key="add_btn"):
+    if st.button("Add"):
         if dn and dt and dj:
             insert_data(dn, dt, dj, ds)
             st.success("Added")
             st.rerun()
 
-    st.subheader("📁 Upload CSV")
-    file = st.file_uploader("Upload CSV", type=["csv"], key="csv")
+    st.subheader("📁 Upload CSV (ONE TIME ONLY)")
+
+    file = st.file_uploader("Upload CSV", type=["csv"])
 
     if file:
-        df = pd.read_csv(file)
-        st.dataframe(df)
-        if st.button("Insert CSV", key="csv_btn"):
-            insert_csv(df)
-            st.success("Inserted")
-            st.rerun()
+        df = pd.read_csv(file, chunksize=5000)
+        for chunk in df:
+            chunk.to_sql("faculty_data", conn, if_exists="append", index=False)
+        st.success("Inserted Large CSV Safely")
 
-    st.subheader("📋 Data")
-    st.dataframe(data)
+    st.subheader("📋 Preview Data")
 
-    did = st.text_input("Enter ID", key="delete_id")
+    preview = pd.read_sql("SELECT * FROM faculty_data LIMIT 100", conn)
+    st.dataframe(preview)
 
-    if st.button("Delete", key="delete_btn"):
-        if did:
-            delete_data(did)
-            st.success("Deleted")
-            st.rerun()
+    did = st.text_input("Enter ID")
 
-    # ---------------- LOGOUT ----------------
-    if st.button("Logout", key="logout"):
+    if st.button("Delete"):
+        delete_data(did)
+        st.success("Deleted")
+        st.rerun()
+
+    if st.button("Logout"):
         st.session_state.logged_in = False
         st.rerun()
