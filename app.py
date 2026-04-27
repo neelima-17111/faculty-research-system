@@ -187,15 +187,22 @@ with tab3:
 with tab4:
     st.subheader("🗄️ Database")
 
-    dn = st.text_input("Name", key="db_name")
-    dt = st.text_input("Title", key="db_title")
-    dj = st.text_input("Journal", key="db_journal")
-    ds = st.selectbox("Status", ["Published","Accepted","Rejected","Under Review"], key="db_status")
+    # ✅ NEW FORM
+    with st.form("add_form"):
+        dn = st.text_input("Name")
+        dt = st.text_input("Title")
+        dj = st.text_input("Journal")
+        ds = st.selectbox("Status", ["Published","Accepted","Rejected","Under Review"])
 
-    if st.button("Add"):
-        if dn and dt and dj:
-            insert_data(dn, dt, dj, ds)
-            st.success("Added")
+        submitted = st.form_submit_button("Add")
+
+        if submitted:
+            if dn and dt and dj:
+                insert_data(dn, dt, dj, ds)
+                st.success("Added")
+                st.rerun()
+            else:
+                st.warning("Fill all fields")
 
             st.session_state.update({
                 "db_name": "",
