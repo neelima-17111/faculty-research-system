@@ -48,7 +48,8 @@ def signup(u, p):
 
 # ---------------- LOGIN ----------------
 if not st.session_state.logged_in:
-    st.title("🔐 Login / Signup")
+    st.title("📚 Faculty Research System")
+    st.subheader("🔐 Login / Signup")
 
     choice = st.radio("Choose Option", ["Login", "Signup"], key="auth")
 
@@ -71,6 +72,9 @@ if not st.session_state.logged_in:
                 st.warning("Enter details")
 
     st.stop()
+
+# ---------------- MAIN TITLE ----------------
+st.title("📚 Faculty Research System")
 
 # ---------------- LOAD DATA ----------------
 def load_data():
@@ -147,13 +151,21 @@ with tab1:
 
 # ---------------- TAB 2 ----------------
 with tab2:
-    st.subheader("🔍 Search")
+    st.subheader("🔍 Search Faculty")
 
-    name = st.text_input("Faculty Name", key="search_name")
+    name = st.text_input("Search by Faculty Name", key="search_name")
+    fid_search = st.text_input("Search by Faculty ID", key="search_id")
 
     if st.button("Search", key="search_btn"):
-        res = data[data['faculty'].str.contains(name, case=False, na=False)]
-        st.dataframe(res if not res.empty else pd.DataFrame())
+        result_df = data
+
+        if name:
+            result_df = result_df[result_df['faculty'].str.contains(name, case=False, na=False)]
+
+        if fid_search:
+            result_df = result_df[result_df['faculty_id'].str.contains(fid_search, case=False, na=False)]
+
+        st.dataframe(result_df if not result_df.empty else pd.DataFrame())
 
     st.subheader("🔎 Similar Papers")
 
@@ -210,7 +222,7 @@ with tab4:
             st.success("Deleted")
             st.rerun()
 
-# ---------------- LOGOUT ----------------
-if st.button("Logout", key="logout"):
-    st.session_state.logged_in = False
-    st.rerun()
+    # ---------------- LOGOUT ----------------
+    if st.button("Logout", key="logout"):
+        st.session_state.logged_in = False
+        st.rerun()
