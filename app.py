@@ -252,7 +252,7 @@ if st.button("Delete", key="delete_btn"):
             st.success("Deleted Successfully")
 
             # ✅ CLEAR DELETE FIELD
-            st.session_state.delete_id_unique = ""
+            
 
         else:
             st.error("ID not found")
