@@ -233,10 +233,12 @@ with tab4:
             st.session_state.csv_uploaded = True
             st.success("CSV Loaded")
             st.rerun()
-else:
-        # file removed → clear data completely
+
+# If file removed → clear data
+if file is None:
         st.session_state.csv_uploaded = False
         st.session_state.current_data = pd.DataFrame()
+        data = pd.DataFrame()
         data = pd.DataFrame()
 
     # Data preview removed as requested
