@@ -209,14 +209,13 @@ with tab4:
 
     if file:
         df = pd.read_csv(file)
-        st.dataframe(df)
         if st.button("Insert CSV", key="csv_btn"):
             insert_csv(df)
+            st.session_state.csv_uploaded = True
             st.success("Inserted")
             st.rerun()
 
-    st.subheader("📋 Data")
-    st.dataframe(data)
+    # Data preview removed as requested
 
     did = st.text_input("Enter ID", key="delete_id")
 
