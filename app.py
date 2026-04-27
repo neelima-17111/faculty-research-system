@@ -88,6 +88,10 @@ def load_data():
 
 data = load_data()
 
+# Track CSV upload status
+if "csv_uploaded" not in st.session_state:
+    st.session_state.csv_uploaded = False
+
 # ---------------- ML MODEL ----------------
 if not data.empty:
     vectorizer = TfidfVectorizer()
@@ -179,11 +183,11 @@ with tab2:
 with tab3:
     st.subheader("📊 Analytics")
 
-    if not data.empty:
+    if st.session_state.csv_uploaded and not data.empty:
         st.bar_chart(data['status'].value_counts())
         st.line_chart(data['status'].value_counts())
     else:
-        st.info("No data")
+        st.info("Upload CSV to see analytics")
 
 # ---------------- TAB 4 ----------------
 with tab4:
