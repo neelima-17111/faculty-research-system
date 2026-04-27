@@ -105,20 +105,14 @@ def insert_data(name, title, journal, status):
     cursor.execute("INSERT INTO faculty_data VALUES (?, ?, ?, ?, ?)",
                    (fid, name, title, journal, status.capitalize()))
     conn.commit()
-def delete_data(fid):
-    fid = fid.strip().upper()   # ✅ IMPORTANT LINE
 
+def delete_data(fid):
+    fid = fid.strip().upper()
     cursor.execute("SELECT * FROM faculty_data WHERE UPPER(faculty_id)=?", (fid,))
     result = cursor.fetchone()
 
     if result:
         cursor.execute("DELETE FROM faculty_data WHERE UPPER(faculty_id)=?", (fid,))
-        conn.commit()
-        return True
-    return False
-
-    if result:
-        cursor.execute("DELETE FROM faculty_data WHERE faculty_id=?", (fid,))
         conn.commit()
         return True
     return False
@@ -154,7 +148,7 @@ with tab1:
     pt = st.text_input("Title", key="pred_title")
     pj = st.text_input("Journal", key="pred_journal")
 
-    if st.button("Predict", key="pred_btn"):
+    if st.button("Predict"):
         if not data.empty and pt and pj:
             result, conf = predict_status(pt, pj)
             st.success(result)
@@ -166,10 +160,10 @@ with tab1:
 with tab2:
     st.subheader("🔍 Search Faculty")
 
-    name = st.text_input("Search by Faculty Name", key="search_name")
-    fid_search = st.text_input("Search by Faculty ID", key="search_id")
+    name = st.text_input("Search by Faculty Name")
+    fid_search = st.text_input("Search by Faculty ID")
 
-    if st.button("Search", key="search_btn"):
+    if st.button("Search"):
         result_df = data
 
         if name:
@@ -180,21 +174,12 @@ with tab2:
 
         st.dataframe(result_df if not result_df.empty else pd.DataFrame())
 
-    st.subheader("🔎 Search Papers")
-
-    q = st.text_input("Search by Title Name", key="search_title")
-
-    if st.button("Find", key="find_btn"):
-        if not data.empty:
-            st.dataframe(find_similar(q))
-
 # ---------------- TAB 3 ----------------
 with tab3:
     st.subheader("📊 Analytics")
 
     if not data.empty:
         st.bar_chart(data['status'].value_counts())
-        st.line_chart(data['status'].value_counts())
     else:
         st.info("No data")
 
@@ -207,59 +192,52 @@ with tab4:
     dj = st.text_input("Journal", key="db_journal")
     ds = st.selectbox("Status", ["Published","Accepted","Rejected","Under Review"], key="db_status")
 
-    if st.button("Add", key="add_btn"):
+    if st.button("Add"):
         if dn and dt and dj:
             insert_data(dn, dt, dj, ds)
             st.success("Added")
 
-        # ✅ SAFE CLEAR METHOD
-        st.session_state.update({
-            "db_name": "",
-            "db_title": "",
-            "db_journal": "",
-            "db_status": "Published"
-            "delete_id_unique": ""
-        })
+            st.session_state.update({
+                "db_name": "",
+                "db_title": "",
+                "db_journal": "",
+                "db_status": "Published",
+                "delete_id_unique": ""
+            })
 
-        st.rerun()
+            st.rerun()
+
     st.subheader("📁 Upload CSV")
-    file = st.file_uploader("Upload CSV", type=["csv"], key="csv")
+    file = st.file_uploader("Upload CSV", type=["csv"])
 
     if file:
         df = pd.read_csv(file)
         st.dataframe(df)
-        if st.button("Insert CSV", key="csv_btn"):
+        if st.button("Insert CSV"):
             insert_csv(df)
             st.success("Inserted")
             st.rerun()
 
-    # ✅ DATA PREVIEW ONLY HERE
     st.markdown(f"📊 Total Records: {len(data)}")
 
     with st.expander("👉 Click to view full data"):
         if not data.empty:
             st.dataframe(data)
-        else:
-            st.info("No data available")
 
-    # ✅ DELETE
-   # ✅ DELETE
-did = st.text_input("Enter Faculty ID", key="delete_id_unique")
+    # DELETE
+    did = st.text_input("Enter Faculty ID", key="delete_id_unique")
 
-if st.button("Delete", key="delete_btn"):
-    if did:
-        if delete_data(did):
-            st.success("Deleted Successfully")
+    if st.button("Delete"):
+        if did:
+            if delete_data(did):
+                st.success("Deleted Successfully")
+                st.session_state.delete_id_unique = ""
+            else:
+                st.error("ID not found")
 
-            # ✅ CLEAR DELETE FIELD
-            st.session_state.delete_id_unique = ""
+            st.rerun()
 
-        else:
-            st.error("ID not found")
-
-        st.rerun()
-
-    # ---------------- LOGOUT ----------------
-    if st.button("Logout", key="logout"):
+    # LOGOUT
+    if st.button("Logout"):
         st.session_state.logged_in = False
         st.rerun()
