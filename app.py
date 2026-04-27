@@ -208,10 +208,14 @@ with tab4:
     dj = st.text_input("Journal", key="db_journal")
     ds = st.selectbox("Status", ["Published","Accepted","Rejected","Under Review"], key="db_status")
 
-    if st.button("Add"):
-        if dn and dt and dj:
-            insert_data(dn, dt, dj, ds)
-            st.success("Added")
+    if "db_name" not in st.session_state:
+        st.session_state.db_name = ""
+    if "db_title" not in st.session_state:
+        st.session_state.db_title = ""
+    if "db_journal" not in st.session_state:
+        st.session_state.db_journal = ""
+    if "db_status" not in st.session_state:
+        st.session_state.db_status = "Published"
 
             # reset
             st.session_state["db_name"] = ""
