@@ -216,12 +216,10 @@ with tab4:
             insert_data(dn, dt, dj, ds)
             st.success("Added")
 
-            st.session_state.update({
-                "db_name": "",
-                "db_title": "",
-                "db_journal": "",
-                "db_status": "Published"
-            })
+            st.session_state["db_name"] = ""
+            st.session_state["db_title"] = ""
+            st.session_state["db_journal"] = ""
+            st.session_state["db_status"] = "Published"
 
             st.rerun()
 
