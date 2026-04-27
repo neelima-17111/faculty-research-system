@@ -35,6 +35,10 @@ conn.commit()
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
+# ensure csv flag exists
+if "csv_uploaded" not in st.session_state:
+    st.session_state.csv_uploaded = False
+
 # ---------------- AUTH ----------------
 def login(u, p):
     return cursor.execute(
