@@ -123,7 +123,6 @@ def delete_data(fid):
         )
         conn.commit()
         return True
-
     return False
 
 def insert_csv(df):
@@ -140,7 +139,7 @@ def predict_status(title, journal):
 def find_similar(query):
     q_vec = vectorizer.transform([query])
     sim = cosine_similarity(q_vec, X)[0]
-    return data[sim > 0.3]
+    return data[sim > 0.3] if not data.empty else pd.DataFrame()
 
 # ---------------- TABS ----------------
 tab1, tab2, tab3, tab4 = st.tabs([
@@ -186,8 +185,7 @@ with tab2:
     q = st.text_input("Search Title")
 
     if st.button("Find"):
-        if not data.empty:
-            st.dataframe(find_similar(q))
+        st.dataframe(find_similar(q))
 
 # ---------------- TAB 3 ----------------
 with tab3:
@@ -208,21 +206,10 @@ with tab4:
     dj = st.text_input("Journal", key="db_journal")
     ds = st.selectbox("Status", ["Published","Accepted","Rejected","Under Review"], key="db_status")
 
-    if "db_name" not in st.session_state:
-        st.session_state.db_name = ""
-    if "db_title" not in st.session_state:
-        st.session_state.db_title = ""
-    if "db_journal" not in st.session_state:
-        st.session_state.db_journal = ""
-    if "db_status" not in st.session_state:
-        st.session_state.db_status = "Published"
-
-            # reset
-            st.session_state["db_name"] = ""
-            st.session_state["db_title"] = ""
-            st.session_state["db_journal"] = ""
-            st.session_state["db_status"] = "Published"
-
+    if st.button("Add"):
+        if dn and dt and dj:
+            insert_data(dn, dt, dj, ds)
+            st.success("Added")
             st.rerun()
 
     st.subheader("📁 Upload CSV")
@@ -254,7 +241,6 @@ with tab4:
                 st.success("Deleted Successfully")
             else:
                 st.error("ID not found")
-
             st.rerun()
 
     # ---------------- LOGOUT ----------------
