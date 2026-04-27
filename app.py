@@ -214,12 +214,12 @@ with tab4:
 
         # ✅ SAFE CLEAR METHOD
         st.session_state.update({
-            "db_name": "",
-            "db_title": "",
-            "db_journal": "",
-            "db_status": "Published"
-            "delete_id_unique": ""
-        })
+        "db_name": "",
+        "db_title": "",
+        "db_journal": "",
+        "db_status": "Published",
+        "delete_id_unique": ""
+})
 
         st.rerun()
     st.subheader("📁 Upload CSV")
