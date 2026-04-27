@@ -169,7 +169,7 @@ with tab2:
 
     st.subheader("🔎 Search Papers")
 
-    q = st.text_input("Title name", key="search_title")
+    q = st.text_input("Search by Title name", key="search_title")
 
     if st.button("Find", key="find_btn"):
         if not data.empty:
