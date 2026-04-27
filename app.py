@@ -88,9 +88,17 @@ def load_data():
 
 data = load_data()
 
-# Use session data instead of DB directly
+# ALWAYS use only uploaded CSV data
 if st.session_state.csv_uploaded:
-    data = st.session_state.current_data
+    data = st.session_state.current_data.copy()
+    if not data.empty:
+        data.columns = data.columns.str.lower()
+        if 'faculty' in data.columns:
+            data['faculty'] = data['faculty'].astype(str).str.strip()
+        if 'status' in data.columns:
+            data['status'] = data['status'].astype(str).str.capitalize()
+        if 'title' in data.columns and 'journal' in data.columns:
+            data['text'] = data['title'].astype(str) + " " + data['journal'].astype(str)
 else:
     data = pd.DataFrame()
 
@@ -216,18 +224,20 @@ with tab4:
     st.subheader("📁 Upload CSV")
     file = st.file_uploader("Upload CSV", type=["csv"], key="csv")
 
-    if file:
+    if file is not None:
         df = pd.read_csv(file)
-        st.session_state.current_data = df
+        st.dataframe(df)  # preview uploaded file
 
         if st.button("Use This CSV", key="csv_btn"):
+            st.session_state.current_data = df
             st.session_state.csv_uploaded = True
             st.success("CSV Loaded")
             st.rerun()
 else:
-        # If file removed, clear everything
+        # file removed → clear data completely
         st.session_state.csv_uploaded = False
         st.session_state.current_data = pd.DataFrame()
+        data = pd.DataFrame()
 
     # Data preview removed as requested
 
