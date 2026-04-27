@@ -49,7 +49,6 @@ def signup(u, p):
 # ---------------- LOGIN ----------------
 if not st.session_state.logged_in:
     st.title("📚 Faculty Research System")
-    st.subheader("🔐 Login / Signup")
 
     choice = st.radio("Choose Option", ["Login", "Signup"])
 
@@ -104,7 +103,7 @@ def insert_data(name, title, journal, status):
     fid = generate_id()
     cursor.execute(
         "INSERT INTO faculty_data VALUES (?, ?, ?, ?, ?)",
-        (fid, name, title, journal, status.capitalize())
+        (fid, name, title, journal, status)
     )
     conn.commit()
 
@@ -155,23 +154,21 @@ tab1, tab2, tab3, tab4 = st.tabs([
 with tab1:
     st.subheader("🔮 Predict Status")
 
-    pt = st.text_input("Title", key="pred_title")
-    pj = st.text_input("Journal", key="pred_journal")
+    pt = st.text_input("Title")
+    pj = st.text_input("Journal")
 
     if st.button("Predict"):
         if not data.empty and pt and pj:
             result, conf = predict_status(pt, pj)
             st.success(result)
             st.info(f"Confidence: {conf}%")
-        else:
-            st.warning("Need data")
 
 # ---------------- TAB 2 ----------------
 with tab2:
     st.subheader("🔍 Search Faculty")
 
-    name = st.text_input("Search by Faculty Name", key="search_name")
-    fid_search = st.text_input("Search by Faculty ID", key="search_id")
+    name = st.text_input("Faculty Name")
+    fid_search = st.text_input("Faculty ID")
 
     if st.button("Search"):
         result_df = data
@@ -186,7 +183,7 @@ with tab2:
 
     st.subheader("🔎 Search Papers")
 
-    q = st.text_input("Search by Title")
+    q = st.text_input("Search Title")
 
     if st.button("Find"):
         if not data.empty:
@@ -216,6 +213,7 @@ with tab4:
             insert_data(dn, dt, dj, ds)
             st.success("Added")
 
+            # reset
             st.session_state["db_name"] = ""
             st.session_state["db_title"] = ""
             st.session_state["db_journal"] = ""
