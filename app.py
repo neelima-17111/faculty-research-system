@@ -51,20 +51,20 @@ if not st.session_state.logged_in:
     st.title("📚 Faculty Research System")
     st.subheader("🔐 Login / Signup")
 
-    choice = st.radio("Choose Option", ["Login", "Signup"])
+    choice = st.radio("Choose Option", ["Login", "Signup"], key="auth")
 
-    user = st.text_input("Username")
-    pwd = st.text_input("Password", type="password")
+    user = st.text_input("Username", key="login_user")
+    pwd = st.text_input("Password", type="password", key="login_pass")
 
     if choice == "Login":
-        if st.button("Login"):
+        if st.button("Login", key="login_btn"):
             if login(user, pwd):
                 st.session_state.logged_in = True
                 st.rerun()
             else:
                 st.error("Invalid credentials")
     else:
-        if st.button("Signup"):
+        if st.button("Signup", key="signup_btn"):
             if user and pwd:
                 signup(user, pwd)
                 st.success("Account created")
@@ -76,7 +76,7 @@ if not st.session_state.logged_in:
 # ---------------- MAIN TITLE ----------------
 st.title("📚 Faculty Research System")
 
-# ---------------- LOAD DATA (CACHED) ----------------
+# ---------------- LOAD DATA ----------------
 @st.cache_data
 def load_data():
     df = pd.read_sql("SELECT * FROM faculty_data", conn)
@@ -111,11 +111,11 @@ def delete_data(fid):
     cursor.execute("DELETE FROM faculty_data WHERE faculty_id=?", (fid,))
     conn.commit()
 
-# 🔥 CHUNK + BULK INSERT (MAIN FIX)
+# 🔥 LARGE CSV HANDLING
 def insert_csv(file):
     chunksize = 5000
     progress = st.progress(0)
-    total = 0
+    total_rows = 0
 
     for chunk in pd.read_csv(file, chunksize=chunksize):
         chunk.columns = chunk.columns.str.lower()
@@ -125,8 +125,8 @@ def insert_csv(file):
 
         chunk.to_sql('faculty_data', conn, if_exists='append', index=False)
 
-        total += len(chunk)
-        progress.progress(min(total / 100000, 1.0))  # approximate progress
+        total_rows += len(chunk)
+        progress.progress(min(total_rows / 100000, 1.0))
 
     progress.empty()
     st.success("CSV Inserted Successfully 🚀")
@@ -155,10 +155,10 @@ tab1, tab2, tab3, tab4 = st.tabs([
 with tab1:
     st.subheader("🔮 Predict Status")
 
-    pt = st.text_input("Title")
-    pj = st.text_input("Journal")
+    pt = st.text_input("Title", key="pred_title")
+    pj = st.text_input("Journal", key="pred_journal")
 
-    if st.button("Predict"):
+    if st.button("Predict", key="pred_btn"):
         if not data.empty and pt and pj:
             result, conf = predict_status(pt, pj)
             st.success(result)
@@ -170,25 +170,25 @@ with tab1:
 with tab2:
     st.subheader("🔍 Search Faculty")
 
-    name = st.text_input("Search by Faculty Name")
-    fid_search = st.text_input("Search by Faculty ID")
+    name = st.text_input("Search by Faculty Name", key="search_name")
+    fid_search = st.text_input("Search by Faculty ID", key="search_id")
 
-    if st.button("Search"):
+    if st.button("Search", key="search_btn"):
         result_df = data
 
         if name:
-            result_df = result_df[result_df['faculty'].str.contains(name, case=False)]
+            result_df = result_df[result_df['faculty'].str.contains(name, case=False, na=False)]
 
         if fid_search:
-            result_df = result_df[result_df['faculty_id'].str.contains(fid_search, case=False)]
+            result_df = result_df[result_df['faculty_id'].str.contains(fid_search, case=False, na=False)]
 
         st.dataframe(result_df)
 
     st.subheader("🔎 Similar Papers")
 
-    q = st.text_input("Keyword")
+    q = st.text_input("Keyword", key="search_keyword")
 
-    if st.button("Find"):
+    if st.button("Find", key="find_btn"):
         if not data.empty:
             st.dataframe(find_similar(q))
 
@@ -206,37 +206,37 @@ with tab3:
 with tab4:
     st.subheader("🗄️ Database")
 
-    dn = st.text_input("Name")
-    dt = st.text_input("Title")
-    dj = st.text_input("Journal")
-    ds = st.selectbox("Status", ["Published","Accepted","Rejected","Under Review"])
+    dn = st.text_input("Name", key="db_name")
+    dt = st.text_input("Title", key="db_title")
+    dj = st.text_input("Journal", key="db_journal")
+    ds = st.selectbox("Status", ["Published","Accepted","Rejected","Under Review"], key="db_status")
 
-    if st.button("Add"):
+    if st.button("Add", key="add_btn"):
         if dn and dt and dj:
             insert_data(dn, dt, dj, ds)
             st.success("Added")
             st.rerun()
 
     st.subheader("📁 Upload CSV")
-    file = st.file_uploader("Upload CSV", type=["csv"])
+    file = st.file_uploader("Upload CSV", type=["csv"], key="csv")
 
     if file:
-        if st.button("Insert CSV"):
+        if st.button("Insert CSV", key="csv_btn"):
             insert_csv(file)
             st.rerun()
 
     st.subheader("📋 Data")
     st.dataframe(data)
 
-    did = st.text_input("Enter ID")
+    did = st.text_input("Enter ID", key="delete_id")
 
-    if st.button("Delete"):
+    if st.button("Delete", key="delete_btn"):
         if did:
             delete_data(did)
             st.success("Deleted")
             st.rerun()
 
-    # LOGOUT
-    if st.button("Logout"):
+    # ✅ LOGOUT ONLY IN TAB 4
+    if st.button("Logout", key="logout_btn"):
         st.session_state.logged_in = False
         st.rerun()
