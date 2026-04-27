@@ -167,9 +167,9 @@ with tab2:
 
         st.dataframe(result_df if not result_df.empty else pd.DataFrame())
 
-    st.subheader("🔎 Search Papers")
+    st.subheader("🔎 Similar Papers")
 
-    q = st.text_input("Search by Title name", key="search_title")
+    q = st.text_input("Keyword", key="search_keyword")
 
     if st.button("Find", key="find_btn"):
         if not data.empty:
@@ -222,7 +222,7 @@ with tab4:
             st.success("Deleted")
             st.rerun()
 
-# ---------------- LOGOUT ----------------
-if st.button("Logout", key="logout"):
-    st.session_state.logged_in = False
-    st.rerun()
+    # ---------------- LOGOUT ----------------
+    if st.button("Logout", key="logout"):
+        st.session_state.logged_in = False
+        st.rerun()
