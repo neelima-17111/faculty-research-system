@@ -238,7 +238,6 @@ with tab4:
         if did:
             if delete_data(did):
                 st.success("Deleted Successfully")
-                st.session_state.delete_id_unique = ""
             else:
                 st.error("ID not found")
 
