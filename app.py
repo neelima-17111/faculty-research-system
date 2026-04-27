@@ -208,7 +208,7 @@ with tab4:
     ds = st.selectbox("Status", ["Published","Accepted","Rejected","Under Review"], key="db_status")
 
     if st.button("Add", key="add_btn"):
-    if dn and dt and dj:
+        if dn and dt and dj:
         insert_data(dn, dt, dj, ds)
         st.success("Added")
 
