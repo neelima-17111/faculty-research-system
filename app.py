@@ -51,20 +51,20 @@ if not st.session_state.logged_in:
     st.title("📚 Faculty Research System")
     st.subheader("🔐 Login / Signup")
 
-    choice = st.radio("Choose Option", ["Login", "Signup"], key="auth")
+    choice = st.radio("Choose Option", ["Login", "Signup"])
 
-    user = st.text_input("Username", key="user")
-    pwd = st.text_input("Password", type="password", key="pass")
+    user = st.text_input("Username")
+    pwd = st.text_input("Password", type="password")
 
     if choice == "Login":
-        if st.button("Login", key="login_btn"):
+        if st.button("Login"):
             if login(user, pwd):
                 st.session_state.logged_in = True
                 st.rerun()
             else:
                 st.error("Invalid credentials")
     else:
-        if st.button("Signup", key="signup_btn"):
+        if st.button("Signup"):
             if user and pwd:
                 signup(user, pwd)
                 st.success("Account created")
@@ -76,10 +76,10 @@ if not st.session_state.logged_in:
 # ---------------- MAIN TITLE ----------------
 st.title("📚 Faculty Research System")
 
-# ---------------- LOAD LIMITED DATA ----------------
+# ---------------- LOAD DATA (CACHED) ----------------
 @st.cache_data
 def load_data():
-    df = pd.read_sql("SELECT * FROM faculty_data LIMIT 2000", conn)
+    df = pd.read_sql("SELECT * FROM faculty_data", conn)
     if not df.empty:
         df.columns = df.columns.str.lower()
         df['faculty'] = df['faculty'].astype(str).str.strip()
@@ -102,28 +102,35 @@ def generate_id():
     return "FID-" + str(uuid.uuid4())[:8]
 
 def insert_data(name, title, journal, status):
-    exists = cursor.execute("""
-        SELECT 1 FROM faculty_data 
-        WHERE faculty=? AND title=? AND journal=?
-    """, (name, title, journal)).fetchone()
-
-    if not exists:
-        fid = generate_id()
-        cursor.execute("INSERT INTO faculty_data VALUES (?, ?, ?, ?, ?)",
-                       (fid, name, title, journal, status.capitalize()))
-        conn.commit()
+    fid = generate_id()
+    cursor.execute("INSERT INTO faculty_data VALUES (?, ?, ?, ?, ?)",
+                   (fid, name, title, journal, status.capitalize()))
+    conn.commit()
 
 def delete_data(fid):
     cursor.execute("DELETE FROM faculty_data WHERE faculty_id=?", (fid,))
     conn.commit()
 
-# 🔥 CSV INSERT (CHUNK BASED)
+# 🔥 CHUNK + BULK INSERT (MAIN FIX)
 def insert_csv(file):
-    chunks = pd.read_csv(file, chunksize=5000)
-    for chunk in chunks:
-        chunk.to_sql("faculty_data", conn, if_exists="append", index=False)
+    chunksize = 5000
+    progress = st.progress(0)
+    total = 0
 
-# ---------------- ML ----------------
+    for chunk in pd.read_csv(file, chunksize=chunksize):
+        chunk.columns = chunk.columns.str.lower()
+
+        chunk['faculty_id'] = ["FID-" + str(uuid.uuid4())[:8] for _ in range(len(chunk))]
+        chunk = chunk[['faculty_id', 'faculty', 'title', 'journal', 'status']]
+
+        chunk.to_sql('faculty_data', conn, if_exists='append', index=False)
+
+        total += len(chunk)
+        progress.progress(min(total / 100000, 1.0))  # approximate progress
+
+    progress.empty()
+    st.success("CSV Inserted Successfully 🚀")
+
 def predict_status(title, journal):
     vec = vectorizer.transform([title + " " + journal])
     probs = model.predict_proba(vec)[0]
@@ -148,10 +155,10 @@ tab1, tab2, tab3, tab4 = st.tabs([
 with tab1:
     st.subheader("🔮 Predict Status")
 
-    pt = st.text_input("Title", key="pred_title")
-    pj = st.text_input("Journal", key="pred_journal")
+    pt = st.text_input("Title")
+    pj = st.text_input("Journal")
 
-    if st.button("Predict", key="pred_btn"):
+    if st.button("Predict"):
         if not data.empty and pt and pj:
             result, conf = predict_status(pt, pj)
             st.success(result)
@@ -163,29 +170,25 @@ with tab1:
 with tab2:
     st.subheader("🔍 Search Faculty")
 
-    name = st.text_input("Search by Faculty Name", key="search_name")
-    fid_search = st.text_input("Search by Faculty ID", key="search_id")
+    name = st.text_input("Search by Faculty Name")
+    fid_search = st.text_input("Search by Faculty ID")
 
-    if st.button("Search", key="search_btn"):
-        query = "SELECT * FROM faculty_data WHERE 1=1"
-        params = []
+    if st.button("Search"):
+        result_df = data
 
         if name:
-            query += " AND faculty LIKE ?"
-            params.append(f"%{name}%")
+            result_df = result_df[result_df['faculty'].str.contains(name, case=False)]
 
         if fid_search:
-            query += " AND faculty_id LIKE ?"
-            params.append(f"%{fid_search}%")
+            result_df = result_df[result_df['faculty_id'].str.contains(fid_search, case=False)]
 
-        result_df = pd.read_sql(query, conn, params=params)
-        st.dataframe(result_df.head(100))
+        st.dataframe(result_df)
 
     st.subheader("🔎 Similar Papers")
 
-    q = st.text_input("Keyword", key="search_keyword")
+    q = st.text_input("Keyword")
 
-    if st.button("Find", key="find_btn"):
+    if st.button("Find"):
         if not data.empty:
             st.dataframe(find_similar(q))
 
@@ -193,58 +196,47 @@ with tab2:
 with tab3:
     st.subheader("📊 Analytics")
 
-    df = pd.read_sql("SELECT status, COUNT(*) as count FROM faculty_data GROUP BY status", conn)
-    st.bar_chart(df.set_index("status"))
+    if not data.empty:
+        st.bar_chart(data['status'].value_counts())
+        st.line_chart(data['status'].value_counts())
+    else:
+        st.info("No data")
 
 # ---------------- TAB 4 ----------------
 with tab4:
     st.subheader("🗄️ Database")
 
-    # 🔴 RESET BUTTON
-    if st.button("⚠️ Clear Database", key="clear_db"):
-        cursor.execute("DELETE FROM faculty_data")
-        conn.commit()
-        st.success("Database Cleared")
-        st.rerun()
+    dn = st.text_input("Name")
+    dt = st.text_input("Title")
+    dj = st.text_input("Journal")
+    ds = st.selectbox("Status", ["Published","Accepted","Rejected","Under Review"])
 
-    dn = st.text_input("Name", key="db_name")
-    dt = st.text_input("Title", key="db_title")
-    dj = st.text_input("Journal", key="db_journal")
-    ds = st.selectbox("Status", ["Published","Accepted","Rejected","Under Review"], key="db_status")
-
-    if st.button("Add", key="add_btn"):
+    if st.button("Add"):
         if dn and dt and dj:
             insert_data(dn, dt, dj, ds)
             st.success("Added")
             st.rerun()
 
-    # 🔥 CSV Upload Control
-    count = cursor.execute("SELECT COUNT(*) FROM faculty_data").fetchone()[0]
+    st.subheader("📁 Upload CSV")
+    file = st.file_uploader("Upload CSV", type=["csv"])
 
-    if count > 0:
-        st.warning("Data already exists. Clear DB to upload new CSV.")
-    else:
-        st.subheader("📁 Upload CSV (One-time)")
-        file = st.file_uploader("Upload CSV", type=["csv"], key="csv")
+    if file:
+        if st.button("Insert CSV"):
+            insert_csv(file)
+            st.rerun()
 
-        if file:
-            if st.button("Insert CSV", key="csv_btn"):
-                insert_csv(file)
-                st.success("CSV Inserted Successfully")
-                st.rerun()
+    st.subheader("📋 Data")
+    st.dataframe(data)
 
-    st.subheader("📋 Preview Data")
-    preview = pd.read_sql("SELECT * FROM faculty_data LIMIT 100", conn)
-    st.dataframe(preview)
+    did = st.text_input("Enter ID")
 
-    did = st.text_input("Enter ID", key="delete_id")
-
-    if st.button("Delete", key="delete_btn"):
+    if st.button("Delete"):
         if did:
             delete_data(did)
             st.success("Deleted")
             st.rerun()
 
-    if st.button("Logout", key="logout"):
+    # LOGOUT
+    if st.button("Logout"):
         st.session_state.logged_in = False
         st.rerun()
