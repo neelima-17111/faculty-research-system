@@ -109,9 +109,9 @@ if "csv_uploaded" not in st.session_state:
 if "current_data" not in st.session_state:
     st.session_state.current_data = pd.DataFrame()
 
-# Safety: ensure attribute always exists
-try:
-    _ = st.sessio
+# Ensure session data always exists safely
+if "current_data" not in st.session_state or st.session_state.current_data is None:
+    st.session_state.current_data = pd.DataFrame()
 
 # ---------------- ML MODEL ----------------
 if not data.empty:
