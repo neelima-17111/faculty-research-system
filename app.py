@@ -117,12 +117,24 @@ def insert_data(n,t,j,s):
     conn.commit()
 
 def insert_csv(df):
+    # Convert all column names to lowercase
+    df.columns = df.columns.str.lower().str.strip()
+
+    # Possible column name variations
+    faculty_col = next((c for c in df.columns if "faculty" in c), None)
+    title_col = next((c for c in df.columns if "title" in c), None)
+    journal_col = next((c for c in df.columns if "journal" in c), None)
+    status_col = next((c for c in df.columns if "status" in c), None)
+
+    if not all([faculty_col, title_col, journal_col, status_col]):
+        raise ValueError("Invalid CSV format")
+
     for _, row in df.iterrows():
         insert_data(
-            row["faculty"],
-            row["title"],
-            row["journal"],
-            row["status"]
+            str(row[faculty_col]),
+            str(row[title_col]),
+            str(row[journal_col]),
+            str(row[status_col])
         )
 
 def delete_data(fid):
@@ -262,7 +274,7 @@ elif menu=="Database":
                 st.success("CSV Uploaded Successfully")
                 st.rerun()
             except:
-                st.error("CSV must contain: faculty, title, journal, status")
+                st.error("CSV format incorrect. Columns should include Faculty, Title, Journal, Status (any case)")
 
     # Delete
     st.markdown("### 🗑️ Delete Record")
