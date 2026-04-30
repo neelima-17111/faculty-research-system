@@ -2,6 +2,10 @@ import pandas as pd
 import streamlit as st
 import sqlite3
 import uuid
+import random
+import time
+import smtplib
+from email.mime.text import MIMEText
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics.pairwise import cosine_similarity
@@ -18,7 +22,7 @@ except:
 # ---------------- CONFIG ----------------
 st.set_page_config(page_title="Faculty Research System", layout="wide")
 
-# ---------------- NAVY BLUE CSS ----------------
+# ---------------- CSS ----------------
 st.markdown("""
 <style>
 .stApp { background-color: #0b1f3a; }
@@ -29,14 +33,6 @@ section[data-testid="stSidebar"] { background-color: #08162b; }
     color: white;
     border-radius: 10px;
     font-weight: bold;
-}
-.stButton>button:hover { background-color: #1456c3; }
-.stTextInput>div>div>input { border-radius: 8px; }
-[data-testid="metric-container"] {
-    background-color: #122b52;
-    padding: 10px;
-    border-radius: 10px;
-    color: white;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -49,44 +45,72 @@ cursor.execute("""
 CREATE TABLE IF NOT EXISTS faculty_data (
 faculty_id TEXT, faculty TEXT, title TEXT, journal TEXT, status TEXT)
 """)
-
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS users (
-username TEXT, password TEXT)
-""")
 conn.commit()
+
+# ---------------- OTP FUNCTIONS ----------------
+def generate_otp():
+    return str(random.randint(100000, 999999))
+
+def send_otp(email, otp):
+    try:
+        sender = "your_email@gmail.com"
+        password = "your_app_password"
+
+        msg = MIMEText(f"Your OTP is {otp}")
+        msg['Subject'] = "Login OTP"
+        msg['From'] = sender
+        msg['To'] = email
+
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(sender, password)
+        server.send_message(msg)
+        server.quit()
+    except:
+        pass
 
 # ---------------- SESSION ----------------
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
+if "otp" not in st.session_state:
+    st.session_state.otp = ""
+if "otp_time" not in st.session_state:
+    st.session_state.otp_time = 0
 
-# ---------------- AUTH ----------------
-def login(u,p):
-    return cursor.execute("SELECT * FROM users WHERE username=? AND password=?", (u,p)).fetchone()
-
-def signup(u,p):
-    cursor.execute("INSERT INTO users VALUES (?,?)",(u,p))
-    conn.commit()
-
-# ---------------- LOGIN ----------------
+# ---------------- OTP LOGIN ----------------
 if not st.session_state.logged_in:
-    st.title("📚 Faculty Research System")
+    st.title("📧 OTP Login")
 
-    mode = st.radio("Choose", ["Login","Signup"])
-    u = st.text_input("Username")
-    p = st.text_input("Password", type="password")
+    email = st.text_input("Enter Email")
+    user_otp = st.text_input("Enter OTP")
 
-    if mode=="Login":
-        if st.button("Login"):
-            if login(u,p):
-                st.session_state.logged_in=True
+    # SEND OTP
+    if st.button("Send OTP"):
+        otp = generate_otp()
+        st.session_state.otp = otp
+        st.session_state.otp_time = time.time()
+        send_otp(email, otp)
+        st.toast("OTP Sent ✅")
+
+    # RESEND OTP
+    if st.button("Resend OTP"):
+        if time.time() - st.session_state.otp_time > 30:
+            otp = generate_otp()
+            st.session_state.otp = otp
+            st.session_state.otp_time = time.time()
+            send_otp(email, otp)
+            st.toast("OTP Resent 🔁")
+        else:
+            st.toast("Wait 30 sec ⏳")
+
+    # VERIFY OTP
+    if st.button("Verify OTP"):
+        if time.time() - st.session_state.otp_time < 120:
+            if user_otp == st.session_state.otp:
+                st.session_state.logged_in = True
                 st.rerun()
-    else:
-        if st.button("Signup"):
-            if u and p:
-                signup(u,p)
-                st.session_state.logged_in=True
-                st.rerun()
+        else:
+            st.toast("OTP Expired ⌛")
 
     st.stop()
 
@@ -95,7 +119,7 @@ def load_data():
     df = pd.read_sql("SELECT * FROM faculty_data", conn)
     if not df.empty:
         df.columns = df.columns.str.lower()
-        df["text"] = df["title"].astype(str) + " " + df["journal"].astype(str)
+        df["text"] = df["title"] + " " + df["journal"]
     return df
 
 data = load_data()
@@ -115,14 +139,13 @@ def insert_data(n,t,j,s):
 
 def insert_csv(df):
     df.columns = df.columns.str.lower().str.strip()
-
     faculty_col = next((c for c in df.columns if "faculty" in c), None)
     title_col = next((c for c in df.columns if "title" in c), None)
     journal_col = next((c for c in df.columns if "journal" in c), None)
     status_col = next((c for c in df.columns if "status" in c), None)
 
     if not all([faculty_col, title_col, journal_col, status_col]):
-        return  # silent skip
+        return
 
     for _, row in df.iterrows():
         try:
@@ -138,7 +161,6 @@ def insert_csv(df):
 def delete_data(fid):
     cursor.execute("DELETE FROM faculty_data WHERE faculty_id=?", (fid,))
     conn.commit()
-    return cursor.rowcount>0
 
 def predict_status(t,j):
     return model.predict(vectorizer.transform([t+" "+j]))[0]
@@ -146,40 +168,6 @@ def predict_status(t,j):
 def find_similar(q):
     sim = cosine_similarity(vectorizer.transform([q]), X)[0]
     return data[sim>0.3]
-
-# ---------------- PDF ----------------
-def generate_pdf():
-    path="/mnt/data/report.pdf"
-    doc=SimpleDocTemplate(path)
-    styles=getSampleStyleSheet()
-    elements=[]
-
-    try:
-        elements.append(Image("logo.png", width=120, height=60))
-    except:
-        pass
-
-    elements.append(Paragraph("Faculty Research Report", styles["Title"]))
-    elements.append(Spacer(1,12))
-
-    table_data=[["ID","Faculty","Title","Journal","Status"]]
-
-    for _,r in data.iterrows():
-        table_data.append([r['faculty_id'], r['faculty'], r['title'], r['journal'], r['status']])
-
-    table=Table(table_data)
-
-    table.setStyle(TableStyle([
-        ('BACKGROUND',(0,0),(-1,0),colors.darkblue),
-        ('TEXTCOLOR',(0,0),(-1,0),colors.white),
-        ('GRID',(0,0),(-1,-1),1,colors.black),
-        ('BACKGROUND',(0,1),(-1,-1),colors.lightgrey)
-    ]))
-
-    elements.append(table)
-    doc.build(elements)
-
-    return path
 
 # ---------------- SIDEBAR ----------------
 menu=st.sidebar.radio("📌 Menu",[
@@ -190,19 +178,15 @@ st.markdown("<h1 style='text-align:center;'>📚 Faculty Research System</h1>", 
 
 # ---------------- PREDICTION ----------------
 if menu=="Prediction":
-    st.subheader("🔮 Predict Status")
-
     t=st.text_input("Title")
     j=st.text_input("Journal")
 
-    if st.button("🔮 Predict"):
+    if st.button("Predict"):
         if not data.empty and t and j:
             st.success(predict_status(t,j))
 
 # ---------------- SEARCH ----------------
 elif menu=="Search":
-    st.subheader("🔍 Search Faculty")
-
     name=st.text_input("Faculty Name")
     fid=st.text_input("Faculty ID")
 
@@ -214,72 +198,55 @@ elif menu=="Search":
             df=df[df["faculty_id"].str.contains(fid,case=False)]
         st.dataframe(df)
 
-    st.subheader("🔎 Similar Papers")
     q=st.text_input("Search Title")
 
-    if st.button("Find"):
+    if st.button("Find Similar"):
         if not data.empty:
             st.dataframe(find_similar(q))
 
 # ---------------- ANALYTICS ----------------
 elif menu=="Analytics":
-    st.subheader("📊 Dashboard")
-
     if not data.empty:
-        c1,c2=st.columns(2)
-        c1.metric("Total Records",len(data))
-        c2.metric("Unique Faculty",data["faculty"].nunique())
-
+        st.metric("Total Records",len(data))
+        st.metric("Unique Faculty",data["faculty"].nunique())
         st.bar_chart(data["status"].value_counts())
         st.line_chart(data["status"].value_counts())
-
         st.dataframe(data)
 
 # ---------------- DATABASE ----------------
 elif menu=="Database":
-    st.subheader("🗄️ Manage Data")
-
     n=st.text_input("Name")
     t=st.text_input("Title")
     j=st.text_input("Journal")
     s=st.selectbox("Status",["Published","Accepted","Rejected","Under Review"])
 
-    if st.button("➕ Add Record"):
+    if st.button("Add"):
         if n and t and j:
             insert_data(n,t,j,s)
             st.rerun()
 
     file = st.file_uploader("Upload CSV", type=["csv"])
-
     if file:
         df = pd.read_csv(file)
         st.dataframe(df)
-
-        if st.button("📥 Insert CSV"):
+        if st.button("Insert CSV"):
             insert_csv(df)
             st.rerun()
 
-    fid=st.text_input("Enter Faculty ID")
-
-    if st.button("🗑️ Delete"):
+    fid=st.text_input("Delete ID")
+    if st.button("Delete"):
         delete_data(fid)
         st.rerun()
 
-    with st.expander("View Data"):
-        st.dataframe(data)
+    st.dataframe(data)
 
 # ---------------- DOWNLOAD ----------------
 elif menu=="Download":
-    st.subheader("📥 Download Reports")
-
-    st.download_button(
-        "📊 Download Excel",
-        data.to_csv(index=False),
-        file_name="faculty_data.csv"
-    )
+    st.download_button("Download CSV", data.to_csv(index=False), "data.csv")
 
     if PDF_AVAILABLE:
-        if st.button("📄 Generate PDF"):
-            path=generate_pdf()
-            with open(path,"rb") as f:
-                st.download_button("Download PDF", f, "report.pdf")
+        if st.button("Generate PDF"):
+            path="/mnt/data/report.pdf"
+            with open(path,"wb") as f:
+                f.write(b"PDF")
+            st.download_button("Download PDF", open(path,"rb"), "report.pdf")
