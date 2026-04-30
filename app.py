@@ -5,31 +5,9 @@ import uuid
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics.pairwise import cosine_similarity
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet
 
 # ---------------- CONFIG ----------------
-st.set_page_config(page_title="Faculty Research System", layout="wide")
-
-# ---------------- CUSTOM CSS ----------------
-st.markdown("""
-<style>
-body {
-    background-color: #0b1f3a;
-}
-h1, h2, h3 {
-    color: #0b3d91;
-}
-.stButton>button {
-    background-color: #0b3d91;
-    color: white;
-    border-radius: 8px;
-}
-.stButton>button:hover {
-    background-color: #1456c3;
-}
-</style>
-""", unsafe_allow_html=True)
+st.set_page_config(page_title="Faculty Research System", layout="centered")
 
 # ---------------- DATABASE ----------------
 conn = sqlite3.connect("faculty.db", check_same_thread=False)
@@ -51,6 +29,7 @@ CREATE TABLE IF NOT EXISTS users (
     password TEXT
 )
 """)
+
 conn.commit()
 
 # ---------------- SESSION ----------------
@@ -73,6 +52,7 @@ if not st.session_state.logged_in:
     st.title("📚 Faculty Research System")
 
     mode = st.radio("Choose Option", ["Login", "Signup"])
+
     user = st.text_input("Username")
     pwd = st.text_input("Password", type="password")
 
@@ -83,6 +63,7 @@ if not st.session_state.logged_in:
                 st.rerun()
             else:
                 st.error("Invalid credentials")
+
     else:
         if st.button("Signup"):
             if user and pwd:
@@ -90,23 +71,30 @@ if not st.session_state.logged_in:
                 st.success("Account created")
             else:
                 st.warning("Enter details")
+
     st.stop()
+
+# ---------------- MAIN ----------------
+st.title("📚 Faculty Research System")
 
 # ---------------- LOAD DATA ----------------
 def load_data():
     df = pd.read_sql("SELECT * FROM faculty_data", conn)
     if not df.empty:
         df.columns = df.columns.str.lower()
+        df["faculty"] = df["faculty"].astype(str).str.strip()
+        df["status"] = df["status"].str.capitalize()
         df["text"] = df["title"].astype(str) + " " + df["journal"].astype(str)
     return df
 
 data = load_data()
 
-# ---------------- MODEL ----------------
+# ---------------- ML MODEL ----------------
 if not data.empty:
     vectorizer = TfidfVectorizer()
     X = vectorizer.fit_transform(data["text"])
-    model = LogisticRegression(max_iter=200)
+
+    model = LogisticRegression(class_weight="balanced", max_iter=200)
     model.fit(X, data["status"])
 
 # ---------------- FUNCTIONS ----------------
@@ -114,139 +102,159 @@ def generate_id():
     return "FID-" + str(uuid.uuid4())[:8]
 
 def insert_data(name, title, journal, status):
+    fid = generate_id()
     cursor.execute(
         "INSERT INTO faculty_data VALUES (?, ?, ?, ?, ?)",
-        (generate_id(), name, title, journal, status)
+        (fid, name, title, journal, status)
     )
     conn.commit()
 
 def delete_data(fid):
-    cursor.execute("DELETE FROM faculty_data WHERE faculty_id=?", (fid,))
+    fid = fid.strip().upper()
+
+    cursor.execute(
+        "DELETE FROM faculty_data WHERE UPPER(faculty_id)=?",
+        (fid,)
+    )
     conn.commit()
     return cursor.rowcount > 0
 
+def insert_csv(df):
+    for _, row in df.iterrows():
+        insert_data(row["faculty"], row["title"], row["journal"], row["status"])
+
 def predict_status(title, journal):
     vec = vectorizer.transform([title + " " + journal])
-    pred = model.predict(vec)[0]
-    return pred
+    probs = model.predict_proba(vec)[0]
+    result = model.classes_[probs.argmax()]
+    confidence = round(max(probs) * 100, 2)
+    return result, confidence
 
 def find_similar(query):
+    if data.empty:
+        return pd.DataFrame()
     q_vec = vectorizer.transform([query])
     sim = cosine_similarity(q_vec, X)[0]
     return data[sim > 0.3]
 
-# ---------------- PDF GENERATION ----------------
-def generate_pdf():
-    file_path = "/mnt/data/report.pdf"
-    doc = SimpleDocTemplate(file_path)
-    styles = getSampleStyleSheet()
-    content = []
-
-    content.append(Paragraph("Faculty Research Report", styles["Title"]))
-    content.append(Spacer(1, 12))
-
-    for _, row in data.iterrows():
-        text = f"{row['faculty']} - {row['title']} ({row['status']})"
-        content.append(Paragraph(text, styles["Normal"]))
-        content.append(Spacer(1, 10))
-
-    doc.build(content)
-    return file_path
-
-# ---------------- SIDEBAR ----------------
-st.sidebar.title("📌 Navigation")
-menu = st.sidebar.radio("Go to", [
-    "Prediction",
-    "Search",
-    "Analytics",
-    "Database",
-    "Download Report"
+# ---------------- TABS ----------------
+tab1, tab2, tab3, tab4 = st.tabs([
+    "🔮 Prediction",
+    "🔍 Search",
+    "📊 Analytics",
+    "🗄️ Database"
 ])
 
-# ---------------- HEADER ----------------
-st.markdown("<h1 style='text-align:center;'>📚 Faculty Research System</h1>", unsafe_allow_html=True)
-
-# ---------------- PREDICTION ----------------
-if menu == "Prediction":
+# ---------------- TAB 1 ----------------
+with tab1:
     st.subheader("🔮 Predict Status")
 
     title = st.text_input("Title")
     journal = st.text_input("Journal")
 
-    if st.button("🔮 Predict"):
-        if not data.empty:
-            result = predict_status(title, journal)
+    if st.button("Predict"):
+        if not data.empty and title and journal:
+            result, conf = predict_status(title, journal)
             st.success(result)
+            st.info(f"Confidence: {conf}%")
         else:
-            st.warning("No data")
+            st.warning("Not enough data")
 
-# ---------------- SEARCH ----------------
-elif menu == "Search":
-    st.subheader("🔍 Search")
+# ---------------- TAB 2 ----------------
+with tab2:
+    st.subheader("🔍 Search Faculty")
 
     name = st.text_input("Faculty Name")
     fid = st.text_input("Faculty ID")
 
     if st.button("Search"):
         df = data
+
         if name:
-            df = df[df["faculty"].str.contains(name, case=False)]
+            df = df[df["faculty"].str.contains(name, case=False, na=False)]
+
         if fid:
-            df = df[df["faculty_id"].str.contains(fid, case=False)]
+            df = df[df["faculty_id"].str.contains(fid, case=False, na=False)]
+
         st.dataframe(df)
 
     st.subheader("🔎 Similar Papers")
+
     q = st.text_input("Search Title")
 
     if st.button("Find"):
         st.dataframe(find_similar(q))
 
-# ---------------- ANALYTICS ----------------
-elif menu == "Analytics":
-    st.subheader("📊 Dashboard")
+# ---------------- TAB 3 ----------------
+with tab3:
+    st.subheader("📊 Analytics Dashboard")
 
     if not data.empty:
-        col1, col2 = st.columns(2)
-        col1.metric("Total Records", len(data))
-        col2.metric("Unique Faculty", data["faculty"].nunique())
 
-        status_counts = data["status"].value_counts()
-        st.bar_chart(status_counts)
-        st.line_chart(status_counts)
+        # Count status
+        status_counts = data["status"].value_counts().reset_index()
+        status_counts.columns = ["Status", "Count"]
 
-        st.dataframe(data)
+        # Bar chart
+        st.bar_chart(status_counts.set_index("Status"))
+
+        # Line chart (FIXED)
+        st.line_chart(status_counts.set_index("Status"))
+
+        # Extra info
+        st.write("Status Distribution Table")
+        st.dataframe(status_counts)
+
     else:
-        st.info("No data")
+        st.info("No data available")
 
-# ---------------- DATABASE ----------------
-elif menu == "Database":
-    st.subheader("🗄️ Manage Data")
+# ---------------- TAB 4 ----------------
+with tab4:
+    st.subheader("🗄️ Database")
 
-    name = st.text_input("Name")
-    title = st.text_input("Title")
-    journal = st.text_input("Journal")
+    name = st.text_input("Name", key="name")
+    title = st.text_input("Title", key="title")
+    journal = st.text_input("Journal", key="journal")
     status = st.selectbox("Status", ["Published", "Accepted", "Rejected", "Under Review"])
 
-    if st.button("➕ Add"):
-        insert_data(name, title, journal, status)
-        st.success("Added")
+    if st.button("Add Record"):
+        if name and title and journal:
+            insert_data(name, title, journal, status)
+            st.success("Record Added")
+            st.rerun()
+
+    st.subheader("📁 Upload CSV")
+
+    file = st.file_uploader("Upload CSV", type=["csv"])
+
+    if file:
+        df = pd.read_csv(file)
+        st.dataframe(df)
+
+        if st.button("Insert CSV"):
+            insert_csv(df)
+            st.success("Uploaded")
+            st.rerun()
+
+    st.markdown(f"📊 Total Records: {len(data)}")
+
+    with st.expander("View Data"):
+        st.dataframe(data)
+
+    # ---------------- DELETE ----------------
+    st.subheader("🗑️ Delete Record")
+
+    delete_id = st.text_input("Enter Faculty ID")
+
+    if st.button("Delete"):
+        if delete_id:
+            if delete_data(delete_id):
+                st.success("Deleted Successfully")
+            else:
+                st.error("ID not found")
+            st.rerun()
+
+    # ---------------- LOGOUT ----------------
+    if st.button("Logout"):
+        st.session_state.logged_in = False
         st.rerun()
-
-    st.subheader("Delete Record")
-    fid = st.text_input("Enter ID")
-
-    if st.button("🗑️ Delete"):
-        if delete_data(fid):
-            st.success("Deleted")
-        else:
-            st.error("Not found")
-        st.rerun()
-
-# ---------------- PDF DOWNLOAD ----------------
-elif menu == "Download Report":
-    st.subheader("📄 Generate Report")
-
-    if st.button("Generate PDF"):
-        path = generate_pdf()
-        with open(path, "rb") as f:
-            st.download_button("Download PDF", f, file_name="report.pdf")
