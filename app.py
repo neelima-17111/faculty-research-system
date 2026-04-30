@@ -81,15 +81,12 @@ if not st.session_state.logged_in:
             if login(u,p):
                 st.session_state.logged_in=True
                 st.rerun()
-            else:
-                st.error("Invalid credentials")
     else:
         if st.button("Signup"):
             if u and p:
                 signup(u,p)
-                st.success("Account created")
-            else:
-                st.warning("Enter details")
+                st.session_state.logged_in=True
+                st.rerun()
 
     st.stop()
 
@@ -117,25 +114,26 @@ def insert_data(n,t,j,s):
     conn.commit()
 
 def insert_csv(df):
-    # Convert all column names to lowercase
     df.columns = df.columns.str.lower().str.strip()
 
-    # Possible column name variations
     faculty_col = next((c for c in df.columns if "faculty" in c), None)
     title_col = next((c for c in df.columns if "title" in c), None)
     journal_col = next((c for c in df.columns if "journal" in c), None)
     status_col = next((c for c in df.columns if "status" in c), None)
 
     if not all([faculty_col, title_col, journal_col, status_col]):
-        raise ValueError("Invalid CSV format")
+        return  # silent skip
 
     for _, row in df.iterrows():
-        insert_data(
-            str(row[faculty_col]),
-            str(row[title_col]),
-            str(row[journal_col]),
-            str(row[status_col])
-        )
+        try:
+            insert_data(
+                str(row[faculty_col]),
+                str(row[title_col]),
+                str(row[journal_col]),
+                str(row[status_col])
+            )
+        except:
+            pass
 
 def delete_data(fid):
     cursor.execute("DELETE FROM faculty_data WHERE faculty_id=?", (fid,))
@@ -200,8 +198,6 @@ if menu=="Prediction":
     if st.button("🔮 Predict"):
         if not data.empty and t and j:
             st.success(predict_status(t,j))
-        else:
-            st.warning("Enter details or no data available")
 
 # ---------------- SEARCH ----------------
 elif menu=="Search":
@@ -238,15 +234,11 @@ elif menu=="Analytics":
         st.line_chart(data["status"].value_counts())
 
         st.dataframe(data)
-    else:
-        st.info("No data available")
 
 # ---------------- DATABASE ----------------
 elif menu=="Database":
     st.subheader("🗄️ Manage Data")
 
-    # Add
-    st.markdown("### ➕ Add Record")
     n=st.text_input("Name")
     t=st.text_input("Title")
     j=st.text_input("Journal")
@@ -255,13 +247,8 @@ elif menu=="Database":
     if st.button("➕ Add Record"):
         if n and t and j:
             insert_data(n,t,j,s)
-            st.success("Record Added")
             st.rerun()
-        else:
-            st.warning("Enter all fields")
 
-    # CSV Upload
-    st.markdown("### 📁 Upload CSV")
     file = st.file_uploader("Upload CSV", type=["csv"])
 
     if file:
@@ -269,26 +256,15 @@ elif menu=="Database":
         st.dataframe(df)
 
         if st.button("📥 Insert CSV"):
-            try:
-                insert_csv(df)
-                st.success("CSV Uploaded Successfully")
-                st.rerun()
-            except:
-                st.error("CSV format incorrect. Columns should include Faculty, Title, Journal, Status (any case)")
+            insert_csv(df)
+            st.rerun()
 
-    # Delete
-    st.markdown("### 🗑️ Delete Record")
     fid=st.text_input("Enter Faculty ID")
 
     if st.button("🗑️ Delete"):
-        if delete_data(fid):
-            st.success("Deleted Successfully")
-        else:
-            st.error("ID not found")
+        delete_data(fid)
         st.rerun()
 
-    # View
-    st.markdown(f"### 📊 Total Records: {len(data)}")
     with st.expander("View Data"):
         st.dataframe(data)
 
@@ -302,9 +278,7 @@ elif menu=="Download":
         file_name="faculty_data.csv"
     )
 
-    if not PDF_AVAILABLE:
-        st.error("Install reportlab for PDF")
-    else:
+    if PDF_AVAILABLE:
         if st.button("📄 Generate PDF"):
             path=generate_pdf()
             with open(path,"rb") as f:
