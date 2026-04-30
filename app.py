@@ -18,29 +18,52 @@ except:
 # ---------------- CONFIG ----------------
 st.set_page_config(page_title="Faculty Research System", layout="wide")
 
-# ---------------- CSS ----------------
+# ---------------- NAVY BLUE CSS ----------------
 st.markdown("""
 <style>
-body {background-color: #0b1f3a;}
-h1, h2, h3 {color:#0b3d91;}
+.stApp {
+    background-color: #0b1f3a;
+}
+h1, h2, h3 {
+    color: white;
+}
+section[data-testid="stSidebar"] {
+    background-color: #08162b;
+}
 .stButton>button {
-    background-color:#0b3d91;
-    color:white;
-    border-radius:8px;
+    background-color: #0b3d91;
+    color: white;
+    border-radius: 10px;
+    font-weight: bold;
+}
+.stButton>button:hover {
+    background-color: #1456c3;
+}
+.stTextInput>div>div>input {
+    border-radius: 8px;
+}
+[data-testid="metric-container"] {
+    background-color: #122b52;
+    padding: 10px;
+    border-radius: 10px;
+    color: white;
 }
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- DB ----------------
+# ---------------- DATABASE ----------------
 conn = sqlite3.connect("faculty.db", check_same_thread=False)
 cursor = conn.cursor()
 
-cursor.execute("""CREATE TABLE IF NOT EXISTS faculty_data (
-faculty_id TEXT, faculty TEXT, title TEXT, journal TEXT, status TEXT)""")
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS faculty_data (
+faculty_id TEXT, faculty TEXT, title TEXT, journal TEXT, status TEXT)
+""")
 
-cursor.execute("""CREATE TABLE IF NOT EXISTS users (
-username TEXT, password TEXT)""")
-
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS users (
+username TEXT, password TEXT)
+""")
 conn.commit()
 
 # ---------------- SESSION ----------------
@@ -69,19 +92,23 @@ if not st.session_state.logged_in:
                 st.session_state.logged_in=True
                 st.rerun()
             else:
-                st.error("Invalid")
+                st.error("Invalid credentials")
     else:
         if st.button("Signup"):
-            signup(u,p)
-            st.success("Created")
+            if u and p:
+                signup(u,p)
+                st.success("Account created")
+            else:
+                st.warning("Enter details")
 
     st.stop()
 
-# ---------------- LOAD ----------------
+# ---------------- LOAD DATA ----------------
 def load_data():
     df = pd.read_sql("SELECT * FROM faculty_data", conn)
     if not df.empty:
-        df["text"] = df["title"]+" "+df["journal"]
+        df.columns = df.columns.str.lower()
+        df["text"] = df["title"].astype(str) + " " + df["journal"].astype(str)
     return df
 
 data = load_data()
@@ -118,9 +145,9 @@ def generate_pdf():
     styles=getSampleStyleSheet()
     elements=[]
 
-    # Logo (optional - keep logo.png in same folder)
+    # Logo optional
     try:
-        elements.append(Image("logo.png", width=100, height=50))
+        elements.append(Image("logo.png", width=120, height=60))
     except:
         pass
 
@@ -147,7 +174,7 @@ def generate_pdf():
     return path
 
 # ---------------- SIDEBAR ----------------
-menu=st.sidebar.radio("Menu",[
+menu=st.sidebar.radio("📌 Menu",[
     "Prediction","Search","Analytics","Database","Download"
 ])
 
@@ -155,21 +182,23 @@ st.markdown("<h1 style='text-align:center;'>📚 Faculty Research System</h1>", 
 
 # ---------------- PREDICTION ----------------
 if menu=="Prediction":
-    st.subheader("🔮 Predict")
+    st.subheader("🔮 Predict Status")
 
     t=st.text_input("Title")
     j=st.text_input("Journal")
 
-    if st.button("Predict"):
-        if not data.empty:
+    if st.button("🔮 Predict"):
+        if not data.empty and t and j:
             st.success(predict_status(t,j))
+        else:
+            st.warning("Enter details or no data available")
 
 # ---------------- SEARCH ----------------
 elif menu=="Search":
-    st.subheader("🔍 Search")
+    st.subheader("🔍 Search Faculty")
 
     name=st.text_input("Faculty Name")
-    fid=st.text_input("ID")
+    fid=st.text_input("Faculty ID")
 
     if st.button("Search"):
         df=data
@@ -179,44 +208,58 @@ elif menu=="Search":
             df=df[df["faculty_id"].str.contains(fid,case=False)]
         st.dataframe(df)
 
-    st.subheader("Similar Papers")
-    q=st.text_input("Query")
+    st.subheader("🔎 Similar Papers")
+    q=st.text_input("Search Title")
+
     if st.button("Find"):
-        st.dataframe(find_similar(q))
+        if not data.empty:
+            st.dataframe(find_similar(q))
 
 # ---------------- ANALYTICS ----------------
 elif menu=="Analytics":
+    st.subheader("📊 Dashboard")
+
     if not data.empty:
         c1,c2=st.columns(2)
-        c1.metric("Total",len(data))
-        c2.metric("Faculty",data["faculty"].nunique())
+        c1.metric("Total Records",len(data))
+        c2.metric("Unique Faculty",data["faculty"].nunique())
 
         st.bar_chart(data["status"].value_counts())
         st.line_chart(data["status"].value_counts())
 
+        st.dataframe(data)
+    else:
+        st.info("No data available")
+
 # ---------------- DATABASE ----------------
 elif menu=="Database":
+    st.subheader("🗄️ Manage Data")
+
     n=st.text_input("Name")
     t=st.text_input("Title")
     j=st.text_input("Journal")
     s=st.selectbox("Status",["Published","Accepted","Rejected","Under Review"])
 
-    if st.button("Add"):
-        insert_data(n,t,j,s)
-        st.success("Added")
-        st.rerun()
+    if st.button("➕ Add Record"):
+        if n and t and j:
+            insert_data(n,t,j,s)
+            st.success("Record Added")
+            st.rerun()
+        else:
+            st.warning("Enter all fields")
 
     fid=st.text_input("Delete ID")
-    if st.button("Delete"):
+
+    if st.button("🗑️ Delete"):
         if delete_data(fid):
-            st.success("Deleted")
+            st.success("Deleted Successfully")
         else:
-            st.error("Not found")
+            st.error("ID not found")
         st.rerun()
 
 # ---------------- DOWNLOAD ----------------
 elif menu=="Download":
-    st.subheader("📥 Download Options")
+    st.subheader("📥 Download Reports")
 
     # Excel
     st.download_button(
@@ -227,7 +270,7 @@ elif menu=="Download":
 
     # PDF
     if not PDF_AVAILABLE:
-        st.error("Install reportlab for PDF")
+        st.error("Install reportlab to enable PDF")
     else:
         if st.button("📄 Generate PDF"):
             path=generate_pdf()
