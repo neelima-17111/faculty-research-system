@@ -21,27 +21,17 @@ st.set_page_config(page_title="Faculty Research System", layout="wide")
 # ---------------- NAVY BLUE CSS ----------------
 st.markdown("""
 <style>
-.stApp {
-    background-color: #0b1f3a;
-}
-h1, h2, h3 {
-    color: white;
-}
-section[data-testid="stSidebar"] {
-    background-color: #08162b;
-}
+.stApp { background-color: #0b1f3a; }
+h1, h2, h3 { color: white; }
+section[data-testid="stSidebar"] { background-color: #08162b; }
 .stButton>button {
     background-color: #0b3d91;
     color: white;
     border-radius: 10px;
     font-weight: bold;
 }
-.stButton>button:hover {
-    background-color: #1456c3;
-}
-.stTextInput>div>div>input {
-    border-radius: 8px;
-}
+.stButton>button:hover { background-color: #1456c3; }
+.stTextInput>div>div>input { border-radius: 8px; }
 [data-testid="metric-container"] {
     background-color: #122b52;
     padding: 10px;
@@ -126,6 +116,15 @@ def insert_data(n,t,j,s):
                    ("FID-"+str(uuid.uuid4())[:8], n,t,j,s))
     conn.commit()
 
+def insert_csv(df):
+    for _, row in df.iterrows():
+        insert_data(
+            row["faculty"],
+            row["title"],
+            row["journal"],
+            row["status"]
+        )
+
 def delete_data(fid):
     cursor.execute("DELETE FROM faculty_data WHERE faculty_id=?", (fid,))
     conn.commit()
@@ -145,7 +144,6 @@ def generate_pdf():
     styles=getSampleStyleSheet()
     elements=[]
 
-    # Logo optional
     try:
         elements.append(Image("logo.png", width=120, height=60))
     except:
@@ -235,6 +233,8 @@ elif menu=="Analytics":
 elif menu=="Database":
     st.subheader("🗄️ Manage Data")
 
+    # Add
+    st.markdown("### ➕ Add Record")
     n=st.text_input("Name")
     t=st.text_input("Title")
     j=st.text_input("Journal")
@@ -248,7 +248,25 @@ elif menu=="Database":
         else:
             st.warning("Enter all fields")
 
-    fid=st.text_input("Delete ID")
+    # CSV Upload
+    st.markdown("### 📁 Upload CSV")
+    file = st.file_uploader("Upload CSV", type=["csv"])
+
+    if file:
+        df = pd.read_csv(file)
+        st.dataframe(df)
+
+        if st.button("📥 Insert CSV"):
+            try:
+                insert_csv(df)
+                st.success("CSV Uploaded Successfully")
+                st.rerun()
+            except:
+                st.error("CSV must contain: faculty, title, journal, status")
+
+    # Delete
+    st.markdown("### 🗑️ Delete Record")
+    fid=st.text_input("Enter Faculty ID")
 
     if st.button("🗑️ Delete"):
         if delete_data(fid):
@@ -257,20 +275,23 @@ elif menu=="Database":
             st.error("ID not found")
         st.rerun()
 
+    # View
+    st.markdown(f"### 📊 Total Records: {len(data)}")
+    with st.expander("View Data"):
+        st.dataframe(data)
+
 # ---------------- DOWNLOAD ----------------
 elif menu=="Download":
     st.subheader("📥 Download Reports")
 
-    # Excel
     st.download_button(
         "📊 Download Excel",
         data.to_csv(index=False),
         file_name="faculty_data.csv"
     )
 
-    # PDF
     if not PDF_AVAILABLE:
-        st.error("Install reportlab to enable PDF")
+        st.error("Install reportlab for PDF")
     else:
         if st.button("📄 Generate PDF"):
             path=generate_pdf()
