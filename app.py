@@ -48,7 +48,7 @@ def signup(u,p):
     cursor.execute("INSERT INTO users VALUES (?,?)",(u,p))
     conn.commit()
 
-# ---------------- LOGIN PAGE ----------------
+# ---------------- LOGIN ----------------
 if not st.session_state.logged_in:
     st.title("🔐 Login - Faculty Research System")
 
@@ -114,10 +114,17 @@ def delete_data(fid):
     cursor.execute("DELETE FROM faculty_data WHERE faculty_id=?", (fid,))
     conn.commit()
 
+# ✅ PREDICTION WITH CONFIDENCE
 def predict_status(t,j):
     text = t + " " + j
     vec = vectorizer.transform([text])
-    return model.predict(vec)[0]
+
+    pred = model.predict(vec)[0]
+    prob = model.predict_proba(vec)[0]
+
+    confidence = round(max(prob)*100, 2)
+
+    return pred, confidence
 
 def find_similar(q):
     sim = cosine_similarity(vectorizer.transform([q]), X)[0]
@@ -126,6 +133,7 @@ def find_similar(q):
 # ---------------- SIDEBAR ----------------
 name = st.session_state.username.split("@")[0]
 st.sidebar.title(f"👋 {name}")
+
 menu=st.sidebar.radio("📌 Menu",[
     "Prediction","Search","Analytics","Database","Download","Logout"
 ])
@@ -135,12 +143,24 @@ st.title("📚 Faculty Research System")
 # ---------------- PREDICTION ----------------
 if menu=="Prediction":
     st.subheader("🔮 Predict Status")
+
     t=st.text_input("Title")
     j=st.text_input("Journal")
 
     if st.button("Predict"):
         if model and t and j:
-            st.success(predict_status(t,j))
+            pred, conf = predict_status(t,j)
+
+            st.success(f"Prediction: {pred}")
+            st.info(f"Confidence: {conf}%")
+
+            # 🔥 confidence level display
+            if conf > 80:
+                st.success("High Confidence")
+            elif conf > 50:
+                st.warning("Medium Confidence")
+            else:
+                st.error("Low Confidence")
 
 # ---------------- SEARCH ----------------
 elif menu=="Search":
