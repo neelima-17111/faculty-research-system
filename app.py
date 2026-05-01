@@ -8,7 +8,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 # -------- PDF SAFE IMPORT --------
 try:
-    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
     from reportlab.lib import colors
     from reportlab.lib.styles import getSampleStyleSheet
     PDF_AVAILABLE = True
@@ -33,10 +33,7 @@ def load_data():
     df = pd.read_sql("SELECT * FROM faculty_data", conn)
     if not df.empty:
         df.columns = df.columns.str.lower()
-
-        # ✅ FIX: normalize status
         df["status"] = df["status"].astype(str).str.strip().str.title()
-
         df["text"] = df["title"].astype(str) + " " + df["journal"].astype(str)
     return df
 
@@ -62,25 +59,26 @@ def insert_data(n,t,j,s):
 def insert_csv(df):
     df.columns = df.columns.str.lower().str.strip()
 
-    faculty_col = next((c for c in df.columns if "faculty" in c), None)
-    title_col = next((c for c in df.columns if "title" in c), None)
-    journal_col = next((c for c in df.columns if "journal" in c), None)
-    status_col = next((c for c in df.columns if "status" in c), None)
-
-    if not all([faculty_col, title_col, journal_col, status_col]):
-        return
-
     for _, row in df.iterrows():
         insert_data(
-            str(row[faculty_col]),
-            str(row[title_col]),
-            str(row[journal_col]),
-            str(row[status_col])
+            str(row["faculty"]),
+            str(row["title"]),
+            str(row["journal"]),
+            str(row["status"])
         )
 
 def delete_data(fid):
     cursor.execute("DELETE FROM faculty_data WHERE faculty_id=?", (fid,))
     conn.commit()
+
+def predict_status(t,j):
+    text = t + " " + j
+    vec = vectorizer.transform([text])
+    return model.predict(vec)[0]
+
+def find_similar(q):
+    sim = cosine_similarity(vectorizer.transform([q]), X)[0]
+    return data[sim>0.3]
 
 # ---------------- SIDEBAR ----------------
 menu=st.sidebar.radio("📌 Menu",[
@@ -89,8 +87,41 @@ menu=st.sidebar.radio("📌 Menu",[
 
 st.title("📚 Faculty Research System")
 
+# ---------------- PREDICTION ----------------
+if menu=="Prediction":
+    st.subheader("🔮 Predict Status")
+
+    t=st.text_input("Title")
+    j=st.text_input("Journal")
+
+    if st.button("Predict"):
+        if model and t and j:
+            st.success(predict_status(t,j))
+
+# ---------------- SEARCH ----------------
+elif menu=="Search":
+    st.subheader("🔍 Search")
+
+    name=st.text_input("Faculty Name")
+    fid=st.text_input("Faculty ID")
+
+    if st.button("Search"):
+        df=data
+        if name:
+            df=df[df["faculty"].str.contains(name,case=False)]
+        if fid:
+            df=df[df["faculty_id"].str.contains(fid,case=False)]
+        st.dataframe(df)
+
+    st.subheader("🔎 Similar Papers")
+    q=st.text_input("Enter Title")
+
+    if st.button("Find Similar"):
+        if model:
+            st.dataframe(find_similar(q))
+
 # ---------------- ANALYTICS ----------------
-if menu=="Analytics":
+elif menu=="Analytics":
     st.subheader("📊 Dashboard")
 
     if not data.empty:
@@ -98,12 +129,12 @@ if menu=="Analytics":
         c1.metric("Total Records",len(data))
         c2.metric("Unique Faculty",data["faculty"].nunique())
 
-        # ✅ ONLY ONE CLEAN GRAPH
         status_counts = data["status"].value_counts()
-
         st.bar_chart(status_counts)
 
-        st.dataframe(data)
+        # ✅ LINK STYLE VIEW
+        with st.expander("🔗 Click to View Full Data"):
+            st.dataframe(data)
 
 # ---------------- DATABASE ----------------
 elif menu=="Database":
@@ -114,7 +145,7 @@ elif menu=="Database":
     j=st.text_input("Journal")
     s=st.selectbox("Status",["Published","Accepted","Rejected","Under Review"])
 
-    if st.button("➕ Add Record"):
+    if st.button("Add"):
         if n and t and j:
             insert_data(n,t,j,s)
             st.rerun()
@@ -125,30 +156,32 @@ elif menu=="Database":
         df = pd.read_csv(file)
         st.dataframe(df)
 
-        if st.button("📥 Insert CSV"):
+        if st.button("Insert CSV"):
             insert_csv(df)
             st.rerun()
 
-    fid=st.text_input("Enter Faculty ID")
+    fid=st.text_input("Faculty ID")
 
-    if st.button("🗑️ Delete"):
+    if st.button("Delete"):
         delete_data(fid)
         st.rerun()
 
-    st.dataframe(data)
+    # ✅ LINK STYLE VIEW
+    with st.expander("🔗 Click to View Data"):
+        st.dataframe(data)
 
 # ---------------- DOWNLOAD ----------------
 elif menu=="Download":
-    st.subheader("📥 Download Reports")
+    st.subheader("📥 Download")
 
     st.download_button(
-        "📊 Download CSV",
+        "Download CSV",
         data.to_csv(index=False),
         file_name="faculty_data.csv"
     )
 
     if PDF_AVAILABLE:
-        if st.button("📄 Generate PDF"):
+        if st.button("Generate PDF"):
             path="/mnt/data/report.pdf"
             doc=SimpleDocTemplate(path)
             styles=getSampleStyleSheet()
