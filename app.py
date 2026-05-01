@@ -26,7 +26,55 @@ cursor.execute("""
 CREATE TABLE IF NOT EXISTS faculty_data (
 faculty_id TEXT, faculty TEXT, title TEXT, journal TEXT, status TEXT)
 """)
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS users (
+username TEXT, password TEXT)
+""")
+
 conn.commit()
+
+# ---------------- SESSION ----------------
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+if "username" not in st.session_state:
+    st.session_state.username = ""
+
+# ---------------- AUTH ----------------
+def login(u,p):
+    return cursor.execute("SELECT * FROM users WHERE username=? AND password=?", (u,p)).fetchone()
+
+def signup(u,p):
+    cursor.execute("INSERT INTO users VALUES (?,?)",(u,p))
+    conn.commit()
+
+# ---------------- LOGIN PAGE ----------------
+if not st.session_state.logged_in:
+    st.title("🔐 Login - Faculty Research System")
+
+    mode = st.radio("Choose", ["Login","Signup"])
+    u = st.text_input("Username")
+    p = st.text_input("Password", type="password")
+
+    if mode=="Login":
+        if st.button("Login"):
+            if login(u,p):
+                st.session_state.logged_in=True
+                st.session_state.username=u
+                st.success("Login Successful")
+                st.rerun()
+            else:
+                st.error("Invalid Credentials")
+
+    else:
+        if st.button("Signup"):
+            if u and p:
+                signup(u,p)
+                st.success("Account Created")
+            else:
+                st.warning("Enter details")
+
+    st.stop()
 
 # ---------------- LOAD DATA ----------------
 def load_data():
@@ -58,14 +106,9 @@ def insert_data(n,t,j,s):
 
 def insert_csv(df):
     df.columns = df.columns.str.lower().str.strip()
-
     for _, row in df.iterrows():
-        insert_data(
-            str(row["faculty"]),
-            str(row["title"]),
-            str(row["journal"]),
-            str(row["status"])
-        )
+        insert_data(str(row["faculty"]), str(row["title"]),
+                    str(row["journal"]), str(row["status"]))
 
 def delete_data(fid):
     cursor.execute("DELETE FROM faculty_data WHERE faculty_id=?", (fid,))
@@ -81,8 +124,9 @@ def find_similar(q):
     return data[sim>0.3]
 
 # ---------------- SIDEBAR ----------------
+st.sidebar.title(f"👋 {st.session_state.username}")
 menu=st.sidebar.radio("📌 Menu",[
-    "Prediction","Search","Analytics","Database","Download"
+    "Prediction","Search","Analytics","Database","Download","Logout"
 ])
 
 st.title("📚 Faculty Research System")
@@ -90,7 +134,6 @@ st.title("📚 Faculty Research System")
 # ---------------- PREDICTION ----------------
 if menu=="Prediction":
     st.subheader("🔮 Predict Status")
-
     t=st.text_input("Title")
     j=st.text_input("Journal")
 
@@ -132,7 +175,6 @@ elif menu=="Analytics":
         status_counts = data["status"].value_counts()
         st.bar_chart(status_counts)
 
-        # ✅ LINK STYLE VIEW
         with st.expander("🔗 Click to View Full Data"):
             st.dataframe(data)
 
@@ -166,7 +208,6 @@ elif menu=="Database":
         delete_data(fid)
         st.rerun()
 
-    # ✅ LINK STYLE VIEW
     with st.expander("🔗 Click to View Data"):
         st.dataframe(data)
 
@@ -208,3 +249,9 @@ elif menu=="Download":
 
             with open(path,"rb") as f:
                 st.download_button("Download PDF", f, "report.pdf")
+
+# ---------------- LOGOUT ----------------
+elif menu=="Logout":
+    st.session_state.logged_in=False
+    st.session_state.username=""
+    st.rerun()
