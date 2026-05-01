@@ -124,7 +124,8 @@ def find_similar(q):
     return data[sim>0.3]
 
 # ---------------- SIDEBAR ----------------
-st.sidebar.title(f"👋 {st.session_state.username}")
+name = st.session_state.username.split("@")[0]
+st.sidebar.title(f"👋 {name}")
 menu=st.sidebar.radio("📌 Menu",[
     "Prediction","Search","Analytics","Database","Download","Logout"
 ])
