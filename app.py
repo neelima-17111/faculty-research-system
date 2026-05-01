@@ -18,7 +18,7 @@ except:
 # ---------------- CONFIG ----------------
 st.set_page_config(page_title="Faculty Research System", layout="wide")
 
-# ---------------- NAVY BLUE CSS ----------------
+# ---------------- CSS ----------------
 st.markdown("""
 <style>
 .stApp { background-color: #0b1f3a; }
@@ -31,7 +31,6 @@ section[data-testid="stSidebar"] { background-color: #08162b; }
     font-weight: bold;
 }
 .stButton>button:hover { background-color: #1456c3; }
-.stTextInput>div>div>input { border-radius: 8px; }
 [data-testid="metric-container"] {
     background-color: #122b52;
     padding: 10px;
@@ -101,6 +100,9 @@ def load_data():
 data = load_data()
 
 # ---------------- MODEL ----------------
+model = None
+vectorizer = None
+
 if not data.empty:
     vectorizer = TfidfVectorizer()
     X = vectorizer.fit_transform(data["text"])
@@ -122,7 +124,7 @@ def insert_csv(df):
     status_col = next((c for c in df.columns if "status" in c), None)
 
     if not all([faculty_col, title_col, journal_col, status_col]):
-        return  # silent skip
+        return
 
     for _, row in df.iterrows():
         try:
@@ -138,10 +140,17 @@ def insert_csv(df):
 def delete_data(fid):
     cursor.execute("DELETE FROM faculty_data WHERE faculty_id=?", (fid,))
     conn.commit()
-    return cursor.rowcount>0
 
-def predict_status(t,j):
-    return model.predict(vectorizer.transform([t+" "+j]))[0]
+def predict_status_with_confidence(t,j):
+    text = t + " " + j
+    vec = vectorizer.transform([text])
+
+    prediction = model.predict(vec)[0]
+    prob = model.predict_proba(vec)[0]
+
+    confidence = max(prob) * 100
+
+    return prediction, round(confidence,2)
 
 def find_similar(q):
     sim = cosine_similarity(vectorizer.transform([q]), X)[0]
@@ -196,8 +205,11 @@ if menu=="Prediction":
     j=st.text_input("Journal")
 
     if st.button("🔮 Predict"):
-        if not data.empty and t and j:
-            st.success(predict_status(t,j))
+        if model and t and j:
+            pred, conf = predict_status_with_confidence(t,j)
+
+            st.success(f"Prediction: {pred}")
+            st.info(f"Confidence: {conf}%")
 
 # ---------------- SEARCH ----------------
 elif menu=="Search":
@@ -218,7 +230,7 @@ elif menu=="Search":
     q=st.text_input("Search Title")
 
     if st.button("Find"):
-        if not data.empty:
+        if model:
             st.dataframe(find_similar(q))
 
 # ---------------- ANALYTICS ----------------
@@ -283,5 +295,3 @@ elif menu=="Download":
             path=generate_pdf()
             with open(path,"rb") as f:
                 st.download_button("Download PDF", f, "report.pdf")
-
-
