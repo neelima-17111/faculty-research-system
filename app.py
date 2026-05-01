@@ -284,4 +284,4 @@ elif menu=="Download":
             with open(path,"rb") as f:
                 st.download_button("Download PDF", f, "report.pdf")
 
-dintilo mootham aa otp antha paina changes antha chesi full code ivu
+
